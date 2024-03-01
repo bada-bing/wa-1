@@ -1,0 +1,15 @@
+{
+  "name": "wa-1",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "compile": "tsc"
+  },
+  "author": "Miki",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.19.21",
+    "typescript": "^5.3.3"
+  }
+}
