@@ -3,6 +3,7 @@ import { generateTitle, generateBranchName, determineProject, createIssueType } 
 import { updateChangelog } from './updateChangelog';
 import os = require('os');
 import { exec } from 'child_process';
+import { triggerLogSeqWorkflow } from './logseq';
 
 const email = process.env.JIRA_USER;
 const apiToken = process.env.JIRA_API_TOKEN;
@@ -16,6 +17,7 @@ fetchIssue(email, apiToken, jiraDomain, ISSUE_KEY)
 
 function processData(issue) {
     triggerGitWorkflow(issue);
+    triggerLogSeqWorkflow(issue);
     console.log(generateTitle(issue)); // instead of console.log make exec pbcopy
 }
 
