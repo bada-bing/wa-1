@@ -4,6 +4,7 @@ import { updateChangelog } from './updateChangelog';
 import os = require('os');
 import { exec } from 'child_process';
 import { triggerLogSeqWorkflow } from './logseq';
+import { triggerLinearWorkflow } from './linear';
 
 const email = process.env.JIRA_USER;
 const apiToken = process.env.JIRA_API_TOKEN;
@@ -16,9 +17,14 @@ fetchIssue(email, apiToken, jiraDomain, ISSUE_KEY)
     .catch(error => console.error(error));
 
 function processData(issue) {
+    // TODO commit the changelog changes
     triggerGitWorkflow(issue);
     triggerLogSeqWorkflow(issue);
-    console.log(generateTitle(issue)); // instead of console.log make exec pbcopy
+    triggerLinearWorkflow(issue);
+
+    // TODO instead of console.log make exec pbcopy
+    // TODO generate title of the MR (same as the firt line of the changelog)
+    console.log(generateTitle(issue));
 }
 
 // Debug the response in the Shell; Use it with the jq
