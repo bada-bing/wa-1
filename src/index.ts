@@ -1,4 +1,4 @@
-import { fetchIssue } from './jira';
+import { type Issue, fetchIssue } from './jira';
 import { generateTitle, generateBranchName, determineProject, createIssueType } from './utils';
 import { updateChangelog } from './updateChangelog';
 import os = require('os');
@@ -14,9 +14,9 @@ const ISSUE_KEY = process.argv[2];
 
 fetchIssue(email, apiToken, jiraDomain, ISSUE_KEY)
     .then(processData)
-    .catch(error => console.error(error));
+    .catch(console.error);
 
-function processData(issue) {
+function processData(issue: Issue) {
     // TODO commit the changelog changes
     triggerGitWorkflow(issue);
     triggerLogSeqWorkflow(issue);
@@ -32,14 +32,16 @@ function printOut(data: string) {
     console.log(JSON.stringify(data));
 }
 
+
+// todo extract to separate module
 // Create new branch in git project and update changelog
-async function triggerGitWorkflow(issue) {
+async function triggerGitWorkflow(issue: Issue) {
     const home = os.homedir();
     const project = determineProject(issue);
     const projectDir = `${home}/src/${project}`;
 
     const branchName = generateBranchName(issue)
-    const summary = issue.fields.summary; // raw summary without dashes
+    const summary: string = issue.fields.summary; // raw summary without dashes
     const issueType = createIssueType(issue);
 
     // 1. checkout develop

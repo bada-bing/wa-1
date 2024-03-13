@@ -4,9 +4,10 @@ import nunjucks = require("nunjucks");
 import fs = require('fs');
 import os = require('os');
 import { createLink, determineProject } from './utils';
+import type { Issue } from "./jira";
 
 // create new page in logseq
-export function triggerLogSeqWorkflow(issue) {
+export function triggerLogSeqWorkflow(issue: Issue) {
 
     const home = os.homedir();
     const dropbox = `${home}/Library/CloudStorage/Dropbox`;

@@ -2,6 +2,7 @@ import { LinearClient, User } from "@linear/sdk";
 // https://developers.linear.app/docs/sdk/getting-started
 import { createLink } from "../utils";
 import nunjucks = require("nunjucks");
+import type { Issue } from "../jira";
 
 const apiKey = process.env.LINEAR_API_KEY;
 
@@ -11,7 +12,7 @@ async function getCurrentUser(): Promise<User> {
     return linearClient.viewer;
 }
 
-export async function triggerLinearWorkflow(jiraIssue: any) {
+export async function triggerLinearWorkflow(jiraIssue: Issue) {
     const team = await linearClient.team("ba915a95-a2cb-4bc7-ab0c-bf193889bd11");
 
     const title = `${jiraIssue.key} ✨ ${jiraIssue.fields.summary}`

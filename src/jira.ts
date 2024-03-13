@@ -1,4 +1,17 @@
-export function fetchIssue(email, apiToken, jiraDomain, issueKey) {
+export type Issue = {
+    key: string;
+    fields: {
+        summary: string;
+        issuetype: {
+            name: string;
+        };
+        parent: {
+            key: string;
+        };
+    };
+};
+
+export function fetchIssue(email, apiToken, jiraDomain, issueKey): Promise<Issue> {
     // Encode credentials for Basic Auth - base64EncodedCredentials
     const auth = Buffer.from(`${email}:${apiToken}`).toString('base64');
 
