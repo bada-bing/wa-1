@@ -1,25 +1,23 @@
-export function generateBranchName(issue) {
+import { Issue } from './jira';
+
+export function generateBranchName(issue: Issue) {
     const issuetype = createIssueType(issue);
     const key = issue.key;
-    const summary = createSummary(issue);
+    const summary = createDashedSummary(issue);
 
     return `${issuetype}/${key}/${summary}`;
 }
 
-// title of logseq page (and potentially the linear issue and raindrop title)
-export function generateTitle(issue) {
-    const key = issue.key;
-    const summary = createSummary(issue);
-
-    return `${key}-${summary}`;
-}
-
-
-function createSummary(issue) {
+/*
+* A string which can be used as a part of the branch name or for the file name
+*/
+export function createDashedSummary(issue: Issue) {
     let summary = issue.fields.summary;
     summary = summary.toLowerCase();
 
-    summary = summary.replace(/\s/g, '-');
+    summary = summary.replace(/\s/g, '-'); // \s as a whitespace characters
+    summary = summary.replace(/\//g, '_');
+    // reduce the number of words, i.e., remove the noise
     summary = summary.replace('shopping-cart', 'cart');
     summary = summary.replace(/-the-/g, '-');
     return summary;
@@ -27,7 +25,7 @@ function createSummary(issue) {
 
 // being more specific about the issue type would give better statistics
 // I could analyse based on the number of branches what kind of tasks are most common
-export function createIssueType(issue) {
+export function createIssueType(issue: Issue) {
     const issuetype = issue.fields.issuetype.name;
 
     switch (issuetype.toLowerCase()) {
@@ -46,8 +44,10 @@ export function createIssueType(issue) {
     }
 }
 
-export function determineProject(issue) {
-    const parent = issue.fields.parent.key;
+export function determineProject(issue: Issue) {
+
+    // it is possible that parent is not set
+    const parent = issue.fields.parent?.key || "";
 
     switch (parent) {
         case process.env.MAIN_PROJECT_JIRA_ISSUE:

@@ -12,7 +12,7 @@ async function getCurrentUser(): Promise<User> {
     return linearClient.viewer;
 }
 
-export async function triggerLinearWorkflow(jiraIssue: Issue) {
+export async function executeLinearProcedure(jiraIssue: Issue) {
     const team = await linearClient.team("ba915a95-a2cb-4bc7-ab0c-bf193889bd11");
 
     const title = `${jiraIssue.key} ✨ ${jiraIssue.fields.summary}`
