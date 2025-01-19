@@ -49,12 +49,14 @@ export function determineProject(issue: Issue) {
   // it is possible that parent is not set
   const parent = issue.fields.parent?.key || "";
 
-    switch (parent) {
-        case process.env.MAIN_PROJECT_JIRA_ISSUE:
-            return process.env.MAIN_PROJECT;
-        default:
-            return process.env.MAIN_PROJECT;
-    }
+  switch (parent) {
+    case process.env.MAIN_PROJECT_JIRA_ISSUE:
+      return process.env.MAIN_PROJECT;
+    case process.env.SECOND_PROJECT_JIRA_ISSUE:
+      return process.env.SECOND_PROJECT;
+    default:
+      return process.env.MAIN_PROJECT;
+  }
 }
 
 export function createLink(issueKey: string) {
