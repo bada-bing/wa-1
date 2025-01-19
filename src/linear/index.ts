@@ -9,12 +9,14 @@ const apiKey = process.env.LINEAR_API_KEY;
 const linearClient = new LinearClient({ apiKey });
 
 async function getCurrentUser(): Promise<User> {
-    return linearClient.viewer;
+  return linearClient.viewer;
 }
 
 export async function executeLinearProcedure(jiraIssue: Issue) {
-    const team = await linearClient.team("ba915a95-a2cb-4bc7-ab0c-bf193889bd11");
+  const team = await linearClient.team("ba915a95-a2cb-4bc7-ab0c-bf193889bd11");
 
+  const title = `${jiraIssue.key} ✨ ${jiraIssue.fields.summary}`;
+  const url = createLink(jiraIssue.key);
     const title = `${jiraIssue.key} ✨ ${jiraIssue.fields.summary}`
     const url = createLink(jiraIssue.key);
 
@@ -22,10 +24,9 @@ export async function executeLinearProcedure(jiraIssue: Issue) {
         url,
     }
 
-    // todo the priority is missing
-    const priority = 0;
-    // todo the estimate is missing
-    // todo labels are missing
+  // todo the priority is missing
+  const priority = 0;
+  // todo labels are missing
 
 
     nunjucks.configure('templates', { autoescape: true });
