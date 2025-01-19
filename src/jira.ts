@@ -8,6 +8,7 @@ export type Issue = {
         parent: {
             key: string;
         };
+        customfield_10008: number | null; // Story Points
     };
 };
 
