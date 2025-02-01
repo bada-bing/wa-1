@@ -6,6 +6,7 @@ import { ConfigLoader } from "./utils/configLoader";
 import { WorkTask } from "./tasks/workTask";
 import { TaskConfig } from "./types";
 import packageJson from "../package.json";
+import { env } from "./utils/envConfig";
 const program = new Command();
 
 program
@@ -20,11 +21,12 @@ program
   )
   .action(async (issueId: string, options: { config: string }) => {
     try {
-      // Load and validate configuration
+      // Load and validate configuration and env vars
       // TODO not sure if I want to use class to load and validate config
       const configLoader = new ConfigLoader(path.resolve(options.config));
       const config: TaskConfig = configLoader.load();
       configLoader.validate();
+      env.validate();
 
       // Execute tasks based on type
       switch (config.type) {
