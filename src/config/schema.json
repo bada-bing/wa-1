@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wa-1/schemas/config.json",
+  "type": "object",
+  "required": ["type", "taskTypeMapping"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "The type of task to execute",
+      "enum": ["work-task", "study-task"]
+    },
+    "taskTypeMapping": {
+      "type": "object",
+      "description": "Mapping of Jira issue types to internal task types",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "bugfix",
+          "feature",
+          "improvement",
+          "task",
+          "chore",
+          "prototype"
+        ]
+      },
+      "required": ["bug", "story", "improvement", "task"],
+      "properties": {
+        "bug": {
+          "type": "string",
+          "description": "Mapping for bug type issues"
+        },
+        "story": {
+          "type": "string",
+          "description": "Mapping for story type issues"
+        },
+        "improvement": {
+          "type": "string",
+          "description": "Mapping for improvement type issues"
+        },
+        "task": {
+          "type": "string",
+          "description": "Mapping for task type issues"
+        }
+      }
+    },
+    "project": {
+      "type": "string",
+      "description": "The project to execute the task in, i.e., the repository name"
+    },
+    "vpn": {
+      "type": "object",
+      "description": "VPN configuration settings",
+      "required": ["enabled", "profile"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether VPN should be enabled"
+        },
+        "profile": {
+          "type": "string",
+          "description": "The VPN profile name to use"
+        }
+      }
+    },
+    "applications": {
+      "type": "object",
+      "description": "Application configurations",
+      "required": ["browser"],
+      "properties": {
+        "browser": {
+          "type": "object",
+          "required": ["path", "profile"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the browser application"
+            },
+            "profile": {
+              "type": "string",
+              "description": "Profile name to use for the browser"
+            }
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "profile"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the application"
+          },
+          "profile": {
+            "type": "string",
+            "description": "Profile name to use for the application"
+          }
+        }
+      }
+    }
+  }
+}
