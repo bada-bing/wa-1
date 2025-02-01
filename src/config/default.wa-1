@@ -1,0 +1,23 @@
+{
+  "type": "work-task",
+  "project": "wa-1",
+  "taskTypeMapping": {
+    "bug": "bugfix",
+    "story": "feature",
+    "feature": "feature",
+    "improvement": "improvement",
+    "task": "task",
+    "spike": "prototype",
+    "default": "chore"
+  },
+  "vpn": {
+    "enabled": true,
+    "profile": "work-vpn"
+  },
+  "applications": {
+    "browser": {
+      "path": "/Applications/Google Chrome.app",
+      "profile": "work"
+    }
+  }
+}
