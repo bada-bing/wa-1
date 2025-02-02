@@ -1,24 +1,18 @@
+import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
 import { TaskConfig, TaskExecutor } from "../types";
-import { getCurrentBranch, isValidRepository } from "../utils/git";
+import { executeGitProcedure } from "../utils/git";
+import { executeLogseqProcedure } from "../logseq";
 
 export class WorkTask implements TaskExecutor {
-  constructor(private config: TaskConfig) {
-    if (!config.project) {
-      throw new Error("Project is required in configuration");
+  constructor(private config: TaskConfig, private issue: AdaptedIssue) {
+    if (!config.project || !issue.project) {
+      throw new Error("Project is required");
     }
   }
 
   async bootstrap(): Promise<void> {
     try {
-      const isValid = await isValidRepository(this.config.project);
-      if (!isValid) {
-        throw new Error(
-          `Invalid git repository for project: ${this.config.project}`
-        );
-      }
-
-      const currentBranch = await getCurrentBranch(this.config.project);
-      console.log(`Current branch: ${currentBranch}`);
+      executeGitProcedure(this.issue);
 
       if (this.config.vpn?.enabled) {
         await this.connectVPN();

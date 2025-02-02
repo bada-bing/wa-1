@@ -61,13 +61,13 @@ export async function isWorkingDirectoryClean(
   }
 }
 
-export async function checkoutDevelop(project: string): Promise<void> {
+export async function checkoutLatestDevelop(project: string): Promise<void> {
   try {
-    await executeCommand("git checkout develop", getProjectPath(project));
-    await executeCommand("git pull", getProjectPath(project));
+    await executeCommand("git switch develop", getProjectPath(project));
+    await executeCommand("git pull origin develop", getProjectPath(project));
   } catch (error) {
     throw new Error(
-      `Failed to checkout and update develop: ${
+      `[git] Failed to checkout and update develop: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
@@ -85,7 +85,7 @@ export async function createFeatureBranch(
     );
   } catch (error) {
     throw new Error(
-      `Failed to create feature branch: ${
+      `[git] Failed to create feature branch: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
@@ -93,23 +93,23 @@ export async function createFeatureBranch(
 }
 
 export async function executeGitProcedure(issue: AdaptedIssue): Promise<void> {
-  const summary: string = issue.summary;
+  if (!(await isValidRepository(issue.project))) {
+    throw new Error(
+      `[git] Invalid git repository at ${getProjectPath(issue.project)}`
+    );
+  }
+
+  if (!(await isWorkingDirectoryClean(issue.project))) {
+    throw new Error(
+      "[git] Working directory is not clean. Commit or stash your changes."
+    );
+  }
 
   try {
-    if (!(await isValidRepository(issue.project))) {
-      throw new Error(
-        `Invalid git repository at ${getProjectPath(issue.project)}`
-      );
-    }
-
-    if (!(await isWorkingDirectoryClean(issue.project))) {
-      throw new Error(
-        "Working directory is not clean. Please commit or stash your changes."
-      );
-    }
-
-    // Execute git commands
-    await checkoutDevelop(issue.project);
+    console.log(
+      `[git] Current branch: ${await getCurrentBranch(issue.project)}`
+    );
+    await checkoutLatestDevelop(issue.project);
     await createFeatureBranch(issue.project, issue.branchName);
 
     // Update changelog
@@ -117,7 +117,12 @@ export async function executeGitProcedure(issue: AdaptedIssue): Promise<void> {
       getProjectPath(issue.project),
       "CHANGELOG.adoc"
     );
-    await updateChangelog(changelogPath, summary, issue.issueType, issue.key);
+    await updateChangelog(
+      changelogPath,
+      issue.summary,
+      issue.issueType,
+      issue.key
+    );
   } catch (error) {
     throw new Error(
       `Git procedure failed: ${
