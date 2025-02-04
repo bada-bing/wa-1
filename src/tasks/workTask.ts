@@ -2,6 +2,7 @@ import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
 import { TaskConfig, TaskExecutor } from "../types";
 import { executeGitProcedure } from "../utils/git";
 import { executeLogseqProcedure } from "../logseq";
+import { executeLinearProcedure } from "../utils/linear";
 
 export class WorkTask implements TaskExecutor {
   constructor(private config: TaskConfig, private issue: AdaptedIssue) {
@@ -12,7 +13,9 @@ export class WorkTask implements TaskExecutor {
 
   async bootstrap(): Promise<void> {
     try {
-      executeGitProcedure(this.issue);
+      await executeGitProcedure(this.issue);
+      await executeLogseqProcedure(this.issue, this.config);
+      await executeLinearProcedure(this.issue);
 
       if (this.config.vpn?.enabled) {
         await this.connectVPN();
