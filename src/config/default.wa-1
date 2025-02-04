@@ -19,5 +19,8 @@
       "path": "/Applications/Google Chrome.app",
       "profile": "work"
     }
+  },
+  "logseq": {
+    "pagesPath": "${HOME}/Library/CloudStorage/Dropbox/obsidian_vaults/kb_logseq/pages"
   }
 }

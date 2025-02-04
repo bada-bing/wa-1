@@ -16,11 +16,20 @@ export interface Applications {
 export interface TaskConfig {
   type: string;
   project: string;
-  taskTypeMapping: {
-    [key: string]: string;
+  taskTypeMapping: Record<string, string>;
+  vpn: {
+    enabled: boolean;
+    profile: string;
   };
-  vpn?: VPNConfig;
-  applications?: Applications;
+  applications: {
+    browser: {
+      path: string;
+      profile: string;
+    };
+  };
+  logseq: {
+    pagesPath: string;
+  };
 }
 
 export interface TaskExecutor {
