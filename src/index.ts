@@ -7,6 +7,7 @@ import { WorkTask } from "./tasks/workTask";
 import { TaskConfig } from "./types";
 import packageJson from "../package.json";
 import { env } from "./utils/envConfig";
+import { fetchAndAdaptIssue } from "./integrations/jiraIssueAdapter";
 const program = new Command();
 
 program
@@ -26,13 +27,13 @@ program
       const config: TaskConfig = configLoader.load();
       configLoader.validate();
       env.validate();
-      const issue = await fetchAndAdaptIssue("WPR-18177", config);
+      const issue = await fetchAndAdaptIssue(issueId, config);
 
       // Execute tasks based on type
       switch (config.type) {
         case "work-task":
-          const workTask = new WorkTask(config);
-          await workTask.execute();
+          const workTask = new WorkTask(config, issue);
+          await workTask.bootstrap();
           break;
         default:
           console.error(`Unknown task type: ${config.type}`);

@@ -111,6 +111,8 @@ export async function executeGitProcedure(issue: AdaptedIssue): Promise<void> {
     );
     await checkoutLatestDevelop(issue.project);
     await createFeatureBranch(issue.project, issue.branchName);
+    // TODO considering that most of these functions are catching the error already, I potentially don't need to catch them again.
+    // or I can simply use this try catch to wrap the error message and the inner functions to determine if they need stderr or stdin
 
     // Update changelog
     const changelogPath = path.join(

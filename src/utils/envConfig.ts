@@ -4,6 +4,9 @@ const REQUIRED_ENV_VARS = [
   "JIRA_USER",
   "LINEAR_API_KEY",
   "LINEAR_TEAM_ID",
+  "CLOCKIFY_API_KEY",
+  "CLOCKIFY_MAIN_WORKSPACE_ID",
+  "CLOCKIFY_PROJECT_STORIES_ID",
 ] as const;
 
 // [number] is 'indexed access type operator' and converts the tuple into a union of its element types
