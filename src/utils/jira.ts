@@ -12,6 +12,11 @@ export type RawJiraIssue = {
       key: string;
     };
     customfield_10008: number | null; // Story Points
+    priority: {
+      // I currently don't use this field
+      id: number;
+      name: string;
+    };
   };
 };
 
@@ -27,7 +32,7 @@ export async function fetchIssue(issueKey: string): Promise<RawJiraIssue> {
     throw new Error("Issue key is required");
   }
 
-  const config = {
+  const config: JiraConfig = {
     email: env.get("JIRA_USER"),
     apiToken: env.get("JIRA_API_TOKEN"),
     jiraDomain: env.get("JIRA_DOMAIN"),
