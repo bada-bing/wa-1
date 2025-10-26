@@ -15,9 +15,7 @@ type EnvVars = {
 };
 
 function validateEnv(): EnvVars {
-  const required = REQUIRED_ENV_VARS;
-
-  const missing = required.filter((key) => !process.env[key]);
+  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
     throw new Error(

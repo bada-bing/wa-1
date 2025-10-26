@@ -1,7 +1,11 @@
 import path from "path";
+import fs from "fs";
 import { executeCommand } from "./shell";
 import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
 import { updateChangelog } from "./updateChangelog";
+import { ensureVPNConnection } from "./vpn";
+import { TaskConfig } from "../types";
+import assert from "assert";
 
 function getProjectPath(project: string): string {
   // TODO make src path configurable
@@ -61,13 +65,46 @@ export async function isWorkingDirectoryClean(
   }
 }
 
-export async function checkoutLatestDevelop(project: string): Promise<void> {
+export async function getDefaultBranch(project: string): Promise<string> {
   try {
-    await executeCommand("git switch develop", getProjectPath(project));
-    await executeCommand("git pull origin develop", getProjectPath(project));
+    // Get the default branch from the remote HEAD reference
+    const output = await executeCommand(
+      "git symbolic-ref refs/remotes/origin/HEAD",
+      getProjectPath(project)
+    );
+    // Output is like "refs/remotes/origin/main" or "refs/remotes/origin/develop"
+    // Extract just the branch name
+    return output.replace("refs/remotes/origin/", "").trim();
+  } catch (error) {
+    // Fallback: try to determine from remote info
+    try {
+      await executeCommand(
+        "git remote set-head origin --auto",
+        getProjectPath(project)
+      );
+      const output = await executeCommand(
+        "git symbolic-ref refs/remotes/origin/HEAD",
+        getProjectPath(project)
+      );
+      return output.replace("refs/remotes/origin/", "").trim();
+    } catch {
+      // Last resort: default to "main"
+      console.warn(
+        `[git] Could not determine default branch for ${project}, defaulting to "main"`
+      );
+      return "main";
+    }
+  }
+}
+
+export async function checkoutLatestDefaultBranch(project: string): Promise<void> {
+  try {
+    const defaultBranch = await getDefaultBranch(project);
+    await executeCommand(`git switch ${defaultBranch}`, getProjectPath(project));
+    await executeCommand(`git pull origin ${defaultBranch}`, getProjectPath(project));
   } catch (error) {
     throw new Error(
-      `[git] Failed to checkout and update develop: ${
+      `[git] Failed to checkout and update default branch: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
@@ -92,7 +129,12 @@ export async function createFeatureBranch(
   }
 }
 
-export async function executeGitProcedure(issue: AdaptedIssue): Promise<void> {
+export async function executeGitProcedure(
+  issue: AdaptedIssue,
+  config: TaskConfig
+): Promise<void> {
+  assert(issue.project, "[GIT] issue project shouldn't be undefined")
+  
   if (!(await isValidRepository(issue.project))) {
     throw new Error(
       `[git] Invalid git repository at ${getProjectPath(issue.project)}`
@@ -105,26 +147,33 @@ export async function executeGitProcedure(issue: AdaptedIssue): Promise<void> {
     );
   }
 
+  // Ensure VPN is connected before executing git remote commands
+  await ensureVPNConnection(config);
+
   try {
     console.log(
       `[git] Current branch: ${await getCurrentBranch(issue.project)}`
     );
-    await checkoutLatestDevelop(issue.project);
+    await checkoutLatestDefaultBranch(issue.project);
     await createFeatureBranch(issue.project, issue.branchName);
     // TODO considering that most of these functions are catching the error already, I potentially don't need to catch them again.
     // or I can simply use this try catch to wrap the error message and the inner functions to determine if they need stderr or stdin
 
-    // Update changelog
+    // Update changelog if it exists
     const changelogPath = path.join(
       getProjectPath(issue.project),
       "CHANGELOG.adoc"
     );
-    await updateChangelog(
-      changelogPath,
-      issue.summary,
-      issue.issueType,
-      issue.key
-    );
+    if (fs.existsSync(changelogPath)) {
+      await updateChangelog(
+        changelogPath,
+        issue.summary,
+        issue.issueType,
+        issue.key
+      );
+    } else {
+      console.log("[git] CHANGELOG.adoc not found, skipping changelog update");
+    }
   } catch (error) {
     throw new Error(
       `Git procedure failed: ${

@@ -27,12 +27,14 @@ program
       const config: TaskConfig = configLoader.load();
       configLoader.validate();
       env.validate();
-      const issue = await fetchAndAdaptIssue(issueId, config);
+      console.log(await getMyTeams())
 
       // Execute tasks based on type
       switch (config.type) {
         case "work-task":
-          const workTask = new WorkTask(config, issue);
+          const workIssue = await fetchAndAdaptIssue(issueId, config);
+          console.log("issue: ", workIssue);
+          const workTask = new WorkTask(config, workIssue);
           await workTask.bootstrap();
           break;
         default:

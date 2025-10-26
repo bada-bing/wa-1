@@ -14,14 +14,13 @@ export class WorkTask implements TaskExecutor {
 
   async bootstrap(): Promise<void> {
     try {
-      await executeGitProcedure(this.issue);
+      await executeGitProcedure(this.issue, this.config);
       await executeLogseqProcedure(this.issue, this.config);
-      await executeLinearProcedure(this.issue);
-      await createClockifyTask({ key: this.issue.key });
-
-      if (this.config.vpn?.enabled) {
-        await this.connectVPN();
-      }
+      await executeLinearProcedure(this.issue, this.config.linear?.teamId);
+      await createClockifyTask(
+        { key: this.issue.key },
+        this.config.clockify?.projectId
+      );
 
       await this.openApplications(); // TODO I could do this after I bootstrap the task
 
@@ -33,11 +32,6 @@ export class WorkTask implements TaskExecutor {
         }`
       );
     }
-  }
-
-  private async connectVPN(): Promise<void> {
-    // TODO Implement VPN connection logic
-    console.log("Connecting to VPN...");
   }
 
   private async openApplications(): Promise<void> {

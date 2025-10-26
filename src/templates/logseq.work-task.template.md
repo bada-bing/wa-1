@@ -1,19 +1,26 @@
-tags:: wpr-story
-project:: {{ project }}
-branch_name:: {{ branch_name }}
-issue_type:: {{ issue_type }}
-title:: {{ slug }}
-
+---
+tags: wpr-story
+state: TODO
+priority: 
+start_date:
+done_date:
+closed_date:
+project: {{ project }}
+issue_type: {{ issue_type }}
+size:
+branch_name: {{ branch_name }}
+title: {{ slug }}
+---
 - #### {{ jira.issue }} ✨ {{ summary }}
 - ## Context
 	- **SCOPE**: #{{ project }}
 	- #### Related Stories
-		- [Related-Story-Placeholder](#)
+		- *Related-Story-Placeholder*
 	- #### Links
 		- [Jira]({{ jira.url }})
-		- [GitLab](#)
-		- [Clockify](#)
-		- [Linear](#)
+		- *[GitLab]*
+		- *[Clockify]*
+		- *[Linear]*
 - ## Problem & Solution
 - ### Problem Description
 	- Describe the problem here.

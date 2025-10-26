@@ -5,12 +5,18 @@ const apiToken = env.get("CLOCKIFY_API_KEY");
 const workspaceId = env.get("CLOCKIFY_MAIN_WORKSPACE_ID");
 const STORIES_ID = env.get("CLOCKIFY_PROJECT_STORIES_ID");
 
-export async function createClockifyTask({ key }: { key: string }) {
+export async function createClockifyTask(
+  { key }: { key: string },
+  projectId?: string
+) {
   if (!apiToken || !workspaceId) {
     throw new Error(
       "Missing required environment variables: CLOCKIFY_API_KEY or CLOCKIFY_MAIN_WORKSPACE_ID"
     );
   }
+
+  // Use provided projectId or fallback to default STORIES_ID
+  const targetProjectId = projectId || STORIES_ID;
 
   const body = {
     name: key,
@@ -19,7 +25,7 @@ export async function createClockifyTask({ key }: { key: string }) {
 
   try {
     const response = await fetch(
-      `https://api.clockify.me/api/v1/workspaces/${workspaceId}/projects/${STORIES_ID}/tasks`,
+      `https://api.clockify.me/api/v1/workspaces/${workspaceId}/projects/${targetProjectId}/tasks`,
       {
         method: "POST",
         headers: {

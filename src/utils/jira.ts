@@ -2,21 +2,62 @@ import { env } from "../utils/envConfig";
 
 // TODO this type is somewhat domain specific, should be read from the JSON config
 export type RawJiraIssue = {
+  id: string;
   key: string;
   fields: {
     summary: string;
+    description?: { type: string, version: number, content: any[]};
     issuetype: {
+      id: string;
       name: string;
+      subtask: boolean;
+      hierarchyLevel: number;
     };
-    parent: {
+    parent?: {
       key: string;
     };
-    customfield_10008: number | null; // Story Points
+    project: {
+      id: string;
+      key: string;
+      name: string;
+      projectTypeKey: string;
+    };
+    status: {
+      id: string;
+      name: string;
+      description: string;
+      statusCategory: {
+        id: number;
+        key: string;
+        colorName: string;
+        name: string;
+      };
+    };
     priority: {
-      // I currently don't use this field
-      id: number;
+      id: string;
       name: string;
     };
+    assignee: {
+      accountId: string;
+      displayName: string;
+      emailAddress: string;
+      active: boolean;
+    } | null;
+    created: string;
+    updated: string;
+    resolutiondate: string | null;
+    resolution: any | null;
+    labels: string[];
+    duedate: string | null;
+    timetracking: {
+      originalEstimate?: string;
+      remainingEstimate?: string;
+      timeSpent?: string;
+    };
+    customfield_10008: number | null; // Story Points
+    subtasks: any[];
+    issuelinks: any[];
+    lastViewed?: string;
   };
 };
 

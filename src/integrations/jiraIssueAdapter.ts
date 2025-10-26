@@ -1,8 +1,11 @@
 import { fetchIssue, RawJiraIssue } from "../utils/jira";
 import { env } from "../utils/envConfig";
-import { TaskConfig } from "../types";
+import { BaseMetadata, TaskConfig } from "../types";
+import { confirmProject, promptForProject } from "../utils/projectPrompt";
+import { generateSlug, sanitizeSummary } from "../utils/prepareMetadata";
 
-export interface AdaptedIssue {
+// Work task specific issue (extends base with Jira-related fields)
+export interface AdaptedIssue extends BaseMetadata {
   key: string;
   summary: string;
   project: string;
@@ -28,31 +31,6 @@ function createIssueType(issue: RawJiraIssue, config: TaskConfig): string {
 }
 
 /*
- * A string which can be used as a part of the branch name or for the file name
- */
-export function createSanitizedSummary(issue: RawJiraIssue) {
-  let summary = issue.fields.summary
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, "-") // replace non-alphanumeric characters with dashes
-    .replace(/\s/g, "_")
-    .replace(/^-|-$/g, "");
-
-  // TODO reducing of words should be specified in the config
-  // TODO considering that the summary is sanitized before removing the words, I should remove the noise before (because sanitization changes the words)
-  // remove the noise, i.e., reduce the number of words
-  summary = summary.replace(/shopping_cart/g, "cart");
-  summary = summary.replace(/_the_/g, "-");
-
-  return summary;
-}
-
-// title of logseq page (and potentially the linear issue and raindrop title)
-function generateSlug(issue: RawJiraIssue): string {
-  const summary = createSanitizedSummary(issue);
-  return `${issue.key}-${summary}`;
-}
-
-/*
   Helper function: convertToStoryPoints
   Converts a Jira custom field value to a number representing story points.
   Adjust the custom field key (customfield_10016) as necessary.
@@ -70,25 +48,87 @@ function convertToStoryPoints(customFieldValue: any): number {
 function generateBranchName(issue: RawJiraIssue, config: TaskConfig): string {
   const issuetype = createIssueType(issue, config);
 
-  const summary = createSanitizedSummary(issue);
+  const summary = sanitizeSummary(issue.fields.summary);
 
   return `${issuetype}/${issue.key.toLowerCase()}/${summary.toLowerCase()}`;
 }
 
-// based on the parent issue, determine the project
-export function determineProject(issue: RawJiraIssue): string {
-  // it is possible that parent is not set
-  // TODO throw error or decide how to handle this
-  const parent = issue.fields.parent?.key || "";
-
-  switch (parent) {
-    case process.env.MAIN_PROJECT_JIRA_ISSUE:
-      return process.env.MAIN_PROJECT || "";
-    case process.env.SECOND_PROJECT_JIRA_ISSUE:
-      return process.env.SECOND_PROJECT || "";
-    default:
-      return process.env.MAIN_PROJECT || "";
+// Use multiple strategies to determine the project: parent and jira project mapping, extract summary keywords
+export function determineProject(
+  issue: RawJiraIssue,
+  config: TaskConfig
+): string | null {
+  // Strategy 1: Check parent issue mapping
+  const parent = issue.fields.parent?.key;
+  if (parent && config.projectMapping.basedOnParent[parent]) {
+    return config.projectMapping.basedOnParent[parent];
   }
+
+  // Strategy 2: Check Jira project mapping
+  const jiraProjectKey = issue.fields.project.key;
+
+  if (config.projectMapping.basedOnJiraProject[jiraProjectKey]) {
+    const mapped = config.projectMapping.basedOnJiraProject[jiraProjectKey];
+    // If it's a single string, return it
+    if (typeof mapped === "string") {
+      return mapped;
+    }
+    // If it's an array with one item, return it
+    if (Array.isArray(mapped) && mapped.length === 1) {
+      return mapped[0];
+    }
+    // If it's an array with multiple items, we can't automatically determine
+    // Return null to trigger user prompt
+  }
+
+  // Strategy 3: Check labels mapping
+  if (issue.fields.labels && issue.fields.labels.length > 0) {
+    const issueLabels = issue.fields.labels.map((label) => label.toLowerCase());
+    for (const [labelKey, project] of Object.entries(
+      config.projectMapping.basedOnLabels || {}
+    )) {
+      if (issueLabels.includes(labelKey.toLowerCase())) {
+        // Verify this project exists in the config
+        if (config.projects.includes(project)) {
+          return project;
+        }
+      }
+    }
+  }
+
+  // Strategy 4: Check summary for project keywords
+  const summary = issue.fields.summary.toLowerCase();
+  const summaryKeywords: Record<string, string[]> = {
+    "cart-ui-next": [
+      "cart_ui_next",
+      "cart-ui-next",
+      "cart ui next",
+      "shopping_cart",
+    ],
+    "shopping-profile-ui": [
+      "shopping_profile",
+      "shopping-profile",
+      "profile ui",
+    ],
+    "form-generator": ["form_generator", "form-generator", "form generator"],
+  };
+
+  for (const [project, keywords] of Object.entries(summaryKeywords)) {
+    if (keywords.some((keyword) => summary.includes(keyword))) {
+      // Verify this project exists in the config
+      if (config.projects.includes(project)) {
+        return project;
+      }
+    }
+  }
+
+  // Strategy 5: Use default from parent mapping
+  if (config.projectMapping.basedOnParent["default"]) {
+    return config.projectMapping.basedOnParent["default"];
+  }
+
+  // No project could be determined
+  return null;
 }
 
 export function createLink(issueKey: string) {
@@ -106,13 +146,22 @@ export async function fetchAndAdaptIssue(
 ): Promise<AdaptedIssue> {
   const issue = await fetchIssue(issueKey);
 
-  const project = determineProject(issue);
+  let project = determineProject(issue, config);
+  
+  if (!project) {
+    // If project couldn't be determined, prompt the user
+    project = await promptForProject(issue.id, config);
+  } else {
+    // If project was determined automatically, confirm with user
+    project = await confirmProject(issue.id, project, config);
+  }
+
   const branchName = generateBranchName(issue, config);
   // TODO consider to separate the issue type from the prefix of the branch name
   // I use the issue type for more than just the prefix of the branch name (e.g., in logseq)
   const issueType = createIssueType(issue, config);
   const jiraLink = createLink(issue.key);
-  const slug = generateSlug(issue);
+  const slug = generateSlug(issue.key, issue.fields.summary);
 
   return {
     key: issue.key,
