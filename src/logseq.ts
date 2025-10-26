@@ -46,6 +46,18 @@ export async function executeLogseqProcedure(
         break;
       }
 
+      case "study-task": {
+        const studyIssue = issue as StudyTaskMetadata;
+        templateData = {
+          key: studyIssue.key,
+          summary: studyIssue.summary,
+          slug: studyIssue.slug,
+          source: studyIssue.source || "manual",
+          initiative: studyIssue.initiative || "",
+          objective: studyIssue.objective || "",
+        };
+        break;
+      }
 
       default:
         throw new Error(`Unknown task type: ${config.type}`);

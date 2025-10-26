@@ -43,6 +43,11 @@ export interface TaskConfig {
   clockify?: {
     projectId: string;
   };
+  remnote?: {
+    exportPath: string;
+  };
+  studySources?: string[]; // e.g., ["exercism", "FM", "coursera", "other"]
+  initiatives?: Record<string, string[]>; // e.g., { "10x": ["10x/domain-fe", "10x/domain-tools"] }
 }
 
 export interface TaskExecutor {
@@ -54,4 +59,11 @@ export interface BaseMetadata {
   key: string;
   summary: string;
   slug: string;
+}
+
+// Study task specific issue (extends base with study-related fields)
+export interface StudyTaskMetadata extends BaseMetadata {
+  source?: string; // e.g., "exercism", "coursera", etc.
+  initiative?: string;
+  objective?: string;
 }

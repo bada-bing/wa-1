@@ -4,10 +4,13 @@ import { Command } from "commander";
 import path from "path";
 import { ConfigLoader } from "./utils/configLoader";
 import { WorkTask } from "./tasks/workTask";
+import { StudyTask } from "./tasks/studyTask";
 import { TaskConfig } from "./types";
 import packageJson from "../package.json";
 import { env } from "./utils/envConfig";
 import { fetchAndAdaptIssue } from "./integrations/jiraIssueAdapter";
+import { createStudyMetadata } from "./integrations/studyIssueMetada";
+import { getMyTeams } from "./utils/linear";
 const program = new Command();
 
 program
@@ -36,6 +39,13 @@ program
           console.log("issue: ", workIssue);
           const workTask = new WorkTask(config, workIssue);
           await workTask.bootstrap();
+          break;
+        case "study-task":
+          const studyIssue = await createStudyMetadata(issueId, config);
+          // console.log("issue: ", studyIssue);
+          process.exit(121);
+          const studyTask = new StudyTask(config, studyIssue);
+          await studyTask.bootstrap();
           break;
         default:
           console.error(`Unknown task type: ${config.type}`);
