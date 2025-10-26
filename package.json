@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@linear/sdk": "^38.0.0",
+    "ajv": "^8.17.1",
     "commander": "^13.1.0",
+    "inquirer": "^12.10.0",
     "nunjucks": "^3.2.4"
   }
 }

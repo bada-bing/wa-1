@@ -2,11 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://wa-1/schemas/config.json",
   "type": "object",
-  "required": ["type", "taskTypeMapping"],
+  "required": ["type"],
   "properties": {
     "type": {
       "type": "string",
-      "description": "The type of task to execute",
+      "description": "The type of task to bootstrap",
       "enum": ["work-task", "study-task"]
     },
     "taskTypeMapping": {
@@ -96,6 +96,77 @@
           }
         }
       }
+    },
+    "linear": {
+      "type": "object",
+      "description": "Linear configuration settings",
+      "required": ["teamId"],
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "description": "The Linear team ID to create issues in"
+        }
+      }
+    },
+    "clockify": {
+      "type": "object",
+      "description": "Clockify configuration settings",
+      "required": ["projectId"],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "description": "The Clockify project ID to create tasks in"
+        }
+      }
+    },
+    "remnote": {
+      "type": "object",
+      "description": "RemNote configuration settings",
+      "required": ["exportPath"],
+      "properties": {
+        "exportPath": {
+          "type": "string",
+          "description": "Path where markdown files will be exported for RemNote import"
+        }
+      }
+    },
+    "studySources": {
+      "type": "array",
+      "description": "List of available study sources (e.g., exercism, FM, coursera)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "initiatives": {
+      "type": "object",
+      "description": "Mapping of initiatives to their objectives (e.g., '10x': ['10x/domain-fe', '10x/domain-tools'])",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "description": "Conditional validation: studySources required for study-task, not allowed for work-task",
+      "if": {
+        "properties": {
+          "type": { "const": "study-task" }
+        }
+      },
+      "then": {
+        "required": ["studySources"]
+      },
+      "else": {
+        "not": {
+          "required": ["studySources"]
+        },
+        "properties": {
+          "studySources": false
+        }
+      }
+    }
+  ]
 }

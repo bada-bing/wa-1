@@ -1,10 +1,15 @@
 import fs from "fs";
+import Ajv from "ajv";
 import { TaskConfig } from "../types";
+import configSchema from "../config/schema.json";
 
 export class ConfigLoader {
   private config: TaskConfig | null = null;
+  private ajv: Ajv;
 
-  constructor(private configPath: string) {}
+  constructor(private configPath: string) {
+    this.ajv = new Ajv({ allErrors: true });
+  }
 
   load(): TaskConfig {
     try {
@@ -25,11 +30,21 @@ export class ConfigLoader {
       throw new Error("Configuration not loaded");
     }
 
-    if (!this.config.type) {
-      throw new Error('Configuration must specify a "type" property');
+    // Validate config against schema
+    const validate = this.ajv.compile(configSchema);
+    const valid = validate(this.config);
+
+    if (!valid) {
+      const errors = validate.errors
+        ?.map((err) => {
+          const path = err.instancePath || "root";
+          return `  - ${path}: ${err.message}`;
+        })
+        .join("\n");
+
+      throw new Error(`Configuration validation failed:\n${errors}`);
     }
 
-    // Add more validation as needed
     return true;
   }
 }
