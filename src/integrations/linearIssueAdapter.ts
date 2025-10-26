@@ -11,7 +11,10 @@ const apiKey = env.get("LINEAR_API_KEY");
 import { IssueCreateInput } from "@linear/sdk/dist/_generated_documents";
 */
 
-export async function adaptIssueToLinear(issue: AdaptedIssue) {
+export async function adaptIssueToLinear(
+  issue: AdaptedIssue,
+  teamId?: string
+) {
   const linearClient = new LinearClient({ apiKey });
 
   const title = `${issue.key} ✨ ${issue.summary}`;
@@ -21,7 +24,7 @@ export async function adaptIssueToLinear(issue: AdaptedIssue) {
     title,
     description: setDescription(issue),
     estimate: setEstimate(issue.storyPoints),
-    teamId: env.get("LINEAR_TEAM_ID"),
+    teamId: teamId || env.get("LINEAR_TEAM_ID"),
   };
 
   if (issue.storyPoints) {
