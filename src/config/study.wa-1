@@ -15,7 +15,8 @@
     "pagesPath": "${HOME}/Library/CloudStorage/Dropbox/obsidian_vaults/kb_logseq/pages"
   },
   "linear": {
-    "teamId": "YOUR_STUDY_TEAM_ID_HERE"
+    "teamId": "dd5f5f6d-e39a-4ef4-b45f-e694868b3e4e",
+    "teamKey": "P"
   },
   "clockify": {
     "projectId": "YOUR_STUDY_PROJECT_ID_HERE"

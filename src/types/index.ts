@@ -38,7 +38,8 @@ export interface TaskConfig {
     pagesPath: string;
   };
   linear?: {
-    teamId: string;
+    teamId?: string;
+    teamKey?: string;
   };
   clockify?: {
     projectId: string;

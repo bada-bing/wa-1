@@ -1,4 +1,5 @@
 import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
+import { adaptWorkIssueToLinear } from "../integrations/linearIssueAdapter";
 import { TaskConfig, TaskExecutor } from "../types";
 import { executeGitProcedure } from "../utils/git";
 import { executeLogseqProcedure } from "../logseq";
@@ -16,7 +17,14 @@ export class WorkTask implements TaskExecutor {
     try {
       await executeGitProcedure(this.issue, this.config);
       await executeLogseqProcedure(this.issue, this.config);
-      await executeLinearProcedure(this.issue, this.config.linear?.teamId);
+      
+      // Adapt work issue to Linear format, then execute
+      const linearInput = await adaptWorkIssueToLinear(this.issue, {
+        id: this.config.linear?.teamId,
+        key: this.config.linear?.teamKey,
+      });
+      await executeLinearProcedure(linearInput);
+      
       await createClockifyTask(
         { key: this.issue.key },
         this.config.clockify?.projectId

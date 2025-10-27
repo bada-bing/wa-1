@@ -10,7 +10,7 @@ import packageJson from "../package.json";
 import { env } from "./utils/envConfig";
 import { fetchAndAdaptIssue } from "./integrations/jiraIssueAdapter";
 import { createStudyMetadata } from "./integrations/studyIssueMetada";
-import { getMyTeams } from "./utils/linear";
+import { getLinearProject, getLinearTeam } from "./utils/linear";
 const program = new Command();
 
 program
@@ -30,7 +30,6 @@ program
       const config: TaskConfig = configLoader.load();
       configLoader.validate();
       env.validate();
-      console.log(await getMyTeams())
 
       // Execute tasks based on type
       switch (config.type) {
@@ -42,10 +41,9 @@ program
           break;
         case "study-task":
           const studyIssue = await createStudyMetadata(issueId, config);
-          // console.log("issue: ", studyIssue);
-          process.exit(121);
-          const studyTask = new StudyTask(config, studyIssue);
-          await studyTask.bootstrap();
+          console.log("issue: ", studyIssue);
+          // const studyTask = new StudyTask(config, studyIssue);
+          // await studyTask.bootstrap();
           break;
         default:
           console.error(`Unknown task type: ${config.type}`);

@@ -1,8 +1,7 @@
 import { LinearClient, User } from "@linear/sdk";
 // https://developers.linear.app/docs/sdk/getting-started
-import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
+import { LinearIssueInput } from "../integrations/linearIssueAdapter";
 import { env } from "./envConfig";
-import { adaptIssueToLinear } from "../integrations/linearIssueAdapter";
 const apiKey = env.get("LINEAR_API_KEY");
 
 const linearClient = new LinearClient({ apiKey });
@@ -11,20 +10,18 @@ async function getCurrentUser(): Promise<User> {
   return linearClient.viewer;
 }
 
+/*
+  Execute Linear issue creation procedure.
+  Accepts a standardized LinearIssueInput that can be produced by either work or study adapters.
+*/
 export async function executeLinearProcedure(
-  issue: AdaptedIssue,
-  teamId?: string
-) {
-  // todo labels are missing
-  // todo assignee is missing
-  // todo priority is missing (should it be set to urgent?)
-  // todo project is missing
-
-  const input = await adaptIssueToLinear(issue, teamId);
+  input: LinearIssueInput
+): Promise<void> {
   const res = linearClient.createIssue(input);
+  const issue = (await (await res).issue)
 
   console.log(
-    `[linear] successfully created issue: ${(await (await res).issue)?.url}`
+    `[linear] successfully created issue ${issue?.id} in project ${issue?.project}: ${issue?.url}`
   );
 }
 
@@ -36,17 +33,47 @@ export async function executeLinearProcedure(
 // 
 export async function getMyTeams() {
   const I = await getCurrentUser();
-  const myTeams = await I.teams();
-  myTeams.nodes.forEach((team) => {
-    console.log(`${team.name} [${team.id}]`);
-  });
-  console.dir(myTeams.nodes.at(0))
+  const myTeams = (await I.teams());
+  return myTeams.nodes
+}
+
+export async function getLinearTeam(options: { id?: string; key?: string }) {
+  if (options.id) {
+    // Fetch team directly by ID
+    const team = await linearClient.team(options.id);
+    return team;
+  }
+  
+  if (options.key) {
+    // Fetch all teams and find by key
+    const teams = await getMyTeams();
+    const theTeam = teams.find((t) => t.key === options.key);
+    return theTeam;
+  }
+  
+  throw new Error("Either id or key must be provided");
 }
 
 // get issue with the given id
 export async function getIssue(issueId: string) {
   const issue = await linearClient.issue(issueId);
   return issue;
+}
+
+// get project by team and project name
+export async function getLinearProject(
+  teamConfig: { id?: string; key?: string },
+  projectName: string
+) {
+  const team = await getLinearTeam(teamConfig);
+  if (!team) {
+    throw new Error(`Team not found for config: ${JSON.stringify(teamConfig)}`);
+  }
+
+  const projects = await team.projects()
+  const project = projects.nodes.find((p) => p.name === projectName);
+  
+  return project;
 }
 
 // Promise.resolve(getMyIssues()).then((data) => console.log(JSON.stringify(data)))
