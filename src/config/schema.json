@@ -9,6 +9,10 @@
       "description": "The type of task to bootstrap",
       "enum": ["work-task", "study-task"]
     },
+    "client": {
+      "type": "string",
+      "description": "The client the work is done for"
+    },
     "taskTypeMapping": {
       "type": "object",
       "description": "Mapping of Jira issue types to internal task types",
@@ -100,13 +104,20 @@
     "linear": {
       "type": "object",
       "description": "Linear configuration settings",
-      "required": ["teamId"],
       "properties": {
         "teamId": {
           "type": "string",
           "description": "The Linear team ID to create issues in"
+        },
+        "teamKey": {
+          "type": "string",
+          "description": "The Linear team key to create issues in (alternative to teamId)"
         }
-      }
+      },
+      "anyOf": [
+        { "required": ["teamId"] },
+        { "required": ["teamKey"] }
+      ]
     },
     "clockify": {
       "type": "object",

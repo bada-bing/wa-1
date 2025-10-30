@@ -1,11 +1,21 @@
 import path from "path";
 import fs from "fs";
 import { executeCommand } from "./shell";
-import { AdaptedIssue } from "../integrations/jiraIssueAdapter";
+
 import { updateChangelog } from "./updateChangelog";
 import { ensureVPNConnection } from "./vpn";
-import { TaskConfig } from "../types";
+import { BaseMetadata, TaskConfig } from "../types";
 import assert from "assert";
+
+/**
+ * Minimal interface for git operations
+ * Extends BaseMetadata with git-specific fields
+ */
+export interface GitIssueData extends BaseMetadata {
+  project: string;
+  branchName: string;
+  issueType: string;
+}
 
 function getProjectPath(project: string): string {
   // TODO make src path configurable
@@ -130,7 +140,7 @@ export async function createFeatureBranch(
 }
 
 export async function executeGitProcedure(
-  issue: AdaptedIssue,
+  issue: GitIssueData,
   config: TaskConfig
 ): Promise<void> {
   assert(issue.project, "[GIT] issue project shouldn't be undefined")

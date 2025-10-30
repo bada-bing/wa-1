@@ -1,5 +1,4 @@
 import fs from "fs/promises";
-import { createLink } from "../integrations/jiraIssueAdapter";
 
 export async function updateChangelog(
   changelogPath: string,
@@ -50,3 +49,7 @@ export async function updateChangelog(
     );
   }
 }
+function createLink(issueKey: string) {
+  throw new Error("Function not implemented.");
+}
+

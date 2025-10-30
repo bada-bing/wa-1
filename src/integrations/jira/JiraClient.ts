@@ -1,4 +1,5 @@
-import { env } from "../utils/envConfig";
+import { TaskConfig } from "../../types";
+import { env } from "../../utils/envConfig";
 
 // TODO this type is somewhat domain specific, should be read from the JSON config
 export type RawJiraIssue = {
@@ -117,4 +118,28 @@ export async function fetchIssue(issueKey: string): Promise<RawJiraIssue> {
       }`
     );
   }
+}
+
+/*
+  Helper function: convertToStoryPoints
+  Converts a Jira custom field value to a number representing story points.
+  Adjust the custom field key (customfield_10016) as necessary.
+*/
+export function convertToStoryPoints(customFieldValue: any): number {
+  const points = Number(customFieldValue);
+  return isNaN(points) ? 0 : points;
+}
+
+/*
+  Map Jira issuetype names to one of the allowed types defined in the config.
+*/
+export function createIssueType(issue: RawJiraIssue, config: TaskConfig): string {
+  const type = issue.fields?.issuetype?.name?.toLowerCase();
+
+  if (!type) {
+    throw new Error("Issue type not found");
+  }
+
+  const mapping = config.taskTypeMapping;
+  return mapping[type] || mapping.default || "chore";
 }

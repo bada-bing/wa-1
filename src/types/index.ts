@@ -1,3 +1,5 @@
+export { CreateLinearIssueInput } from "./linear";
+
 export interface VPNConfig {
   enabled: boolean;
   profile: string;
@@ -16,7 +18,8 @@ export interface Applications {
 // TODO ❓ instead of hardcoding use zod or similar to dynamically set the type
 export interface TaskConfig {
   type: string;
-  project: string;
+  client?: string;
+  project?: string;
   projects: string[];
   taskTypeMapping: Record<string, string>;
   projectMapping: {
@@ -38,11 +41,17 @@ export interface TaskConfig {
     pagesPath: string;
   };
   linear?: {
-    teamId: string;
+    teamId?: string;
+    teamKey?: string;
   };
   clockify?: {
     projectId: string;
   };
+  remnote?: {
+    exportPath: string;
+  };
+  studySources?: string[]; // e.g., ["exercism", "FM", "coursera", "other"]
+  initiatives?: Record<string, string[]>; // e.g., { "10x": ["10x/domain-fe", "10x/domain-tools"] }
 }
 
 export interface TaskExecutor {
@@ -54,4 +63,11 @@ export interface BaseMetadata {
   key: string;
   summary: string;
   slug: string;
+}
+
+// Study task specific issue (extends base with study-related fields)
+export interface StudyTaskMetadata extends BaseMetadata {
+  source?: string; // e.g., "exercism", "coursera", etc.
+  initiative?: string;
+  objective?: string;
 }
