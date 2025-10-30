@@ -253,7 +253,7 @@ export function determineProject(
   Create a branch name based on the issue key and a sanitized version of its summary.
   Use the issue key and summary for the branch name.
 */
-function generateBranchName(issue: RawJiraIssue, config: TaskConfig): string {
+export function generateBranchName(issue: RawJiraIssue, config: TaskConfig): string {
   const issuetype = createIssueType(issue, config);
 
   const summary = sanitizeSummary(issue.fields.summary);
