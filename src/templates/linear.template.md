@@ -19,13 +19,9 @@
 
 ### 🔍 Problem Discovery
 
-- [ ] ⚫ Define Problem
-  - [ ] Collect Initial Data
-  - [ ] Define Initial Problem Statement
-  - [ ] Reproduce the Problem
-  - [ ] Finalize Problem Statement
+- [ ] Define Problem Statement
 - [ ] Collect Requirements
-- [ ] ✍️ Identify Initial Work Chunks
+- [ ] Identify Initial Work Chunks
 
 ### ✨ Implement Solution
 
@@ -36,19 +32,15 @@
 - [ ] 🌘 Apply Quality Checks (linting, tests)
 - [ ] ✅ M2: Start Code/Story Review
 
-## Close the Story
+## Close the Story - Archive Protocol
 
 ### 📝 Review Protocol
 
-- [ ] 🗣️ Present Story
-- [ ] 📥 Archive Slack Channel
-
-### 📦 Archive Protocol
-
 - [ ] 🖋️ Update LogSeq Page
   * Ensure that all LogSeq tasks are closed
-- [ ] 🍃 Schedule for "Reflection"
   * Migrate content from the Story Page to the KB
+- [ ] Schedule for "Reflection"
+- [ ] Review Task
 - [ ] 🤖 Release Story (Jenkins)
   * ✍️ Update Releases Confluence Page
   * ✓ Update Jira Story - On Test

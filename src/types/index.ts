@@ -1,3 +1,5 @@
+export { CreateLinearIssueInput } from "./linear";
+
 export interface VPNConfig {
   enabled: boolean;
   profile: string;
@@ -16,7 +18,8 @@ export interface Applications {
 // TODO ❓ instead of hardcoding use zod or similar to dynamically set the type
 export interface TaskConfig {
   type: string;
-  project: string;
+  client?: string;
+  project?: string;
   projects: string[];
   taskTypeMapping: Record<string, string>;
   projectMapping: {

@@ -1,31 +1,30 @@
 /**
  * RemNote Integration
- * 
+ *
  * NOTE: RemNote currently does not have a public REST API for external integrations.
  * The RemNote Plugin API is designed for plugins that run inside the RemNote application,
  * not for external programmatic access.
- * 
+ *
  * Possible approaches to integrate with RemNote:
- * 
+ *
  * 1. **RemNote Plugin (Recommended)**: Create a RemNote plugin that listens for external
  *    events (e.g., via webhook or polling a local file) and creates pages accordingly.
  *    See: https://plugins.remnote.com/getting-started/overview
- * 
+ *
  * 2. **Manual Markdown Import**: Export the task details as a markdown file to a watched
  *    folder, then manually import it into RemNote.
- * 
+ *
  * 3. **Browser Automation**: Use tools like Playwright or Puppeteer to automate the
  *    RemNote web interface (fragile and not recommended).
- * 
+ *
  * 4. **Contact RemNote**: Request API access from the RemNote team for external integrations.
  *    Discord community: https://discord.com/channels/689979930804617224
- * 
+ *
  * For now, this implementation creates a markdown file that can be manually imported
  * into RemNote or used by a custom RemNote plugin.
  */
 
-import { AdaptedIssue } from "./integrations/jiraIssueAdapter";
-import { TaskConfig } from "./types";
+import { TaskConfig } from "../../types";
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
@@ -39,10 +38,24 @@ interface RemNoteConfig {
 }
 
 /**
+ * Data needed for RemNote export
+ */
+export interface RemNoteIssueData {
+  key: string;
+  summary: string;
+  slug: string;
+  issueType: string;
+  storyPoints: number;
+  branchName: string;
+  jiraLink: string;
+}
+
+/**
  * Creates a markdown file for RemNote import
+ * This is a domain-agnostic integration service - it accepts only the data it needs
  */
 export async function executeRemNoteProcedure(
-  issue: AdaptedIssue,
+  issue: RemNoteIssueData,
   config: TaskConfig
 ) {
   try {
@@ -81,7 +94,7 @@ export async function executeRemNoteProcedure(
   }
 }
 
-function generateRemNoteMarkdown(issue: AdaptedIssue): string {
+function generateRemNoteMarkdown(issue: RemNoteIssueData): string {
   // RemNote uses standard markdown with some extensions
   return `# ${issue.key} - ${issue.summary}
 

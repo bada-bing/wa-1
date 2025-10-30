@@ -1,3 +1,5 @@
+import { env } from "./envConfig";
+
 /**
  * Sanitize a summary string to be used in slugs, branch names, or file names
  * Converts to lowercase, replaces non-alphanumeric with dashes, spaces with underscores
@@ -28,4 +30,8 @@ export function sanitizeSummary(summary: string): string {
 export function generateSlug(taskId: string, summary: string): string {
   const sanitized = sanitizeSummary(summary);
   return `${taskId}-${sanitized}`;
+}
+
+export function generateJiraLink(issueKey: string) {
+  return `${env.get("JIRA_DOMAIN")}/browse/${issueKey}`;
 }

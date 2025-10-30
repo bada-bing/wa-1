@@ -1,5 +1,4 @@
-import { AdaptedIssue } from "./integrations/jiraIssueAdapter";
-import { env } from "./utils/envConfig";
+import { env } from "../../utils/envConfig";
 
 const apiToken = env.get("CLOCKIFY_API_KEY");
 const workspaceId = env.get("CLOCKIFY_MAIN_WORKSPACE_ID");
