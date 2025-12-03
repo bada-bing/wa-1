@@ -12,7 +12,7 @@
     }
   },
   "logseq": {
-    "pagesPath": "${HOME}/Library/CloudStorage/Dropbox/obsidian_vaults/kb_logseq/pages"
+    "pagesPath": "${HOME}/Documents/Logseq/KB/pages"
   },
   "linear": {
     "teamId": "dd5f5f6d-e39a-4ef4-b45f-e694868b3e4e",
@@ -27,12 +27,13 @@
   "studySources": [
     "exercism",
     "FM",
+    "Book",
     "other"
   ],
   "initiatives": {
     "10x": [
       "10x/domain-fe",
-      "10x/domain-tools"
+      "GCP"
     ]
   }
 }

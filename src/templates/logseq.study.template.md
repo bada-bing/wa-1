@@ -1,32 +1,30 @@
 ---
 tags: Task
-type: study
-status: TODO
+Area: [[Private]]
+type: [[Study]]
+source: {{ source }}
 initiative: {{ initiative }}
 objective: {{ objective }}
-priority: 
-start_date:
-done_date:
-closed_date:
 size:
-source: {{ source }}
+status: in_progress
+priority: 
+date_created:
+date_done:
+closed_date:
 title: {{ slug }}
 ---
-- #### {{ key }} ✨ {{ summary }}
+- ### {{ key }} 📚 {{ summary }}
 - ## Context
 	- **SCOPE**: #{{ source }}
-	- #### Related Stories
+	- #### Related Tasks
 		- *Related-Story-Placeholder*
 	- #### Links
 		- *[Linear]*
-		- *[Clockify]*
+		- *[GitHub]*
 		- *[RemNote]*
-- ## Problem & Solution
-- ### Problem Description
-	- Describe the problem here.
-- ### (Solution) Requirements
-	- Describe the solution requirements here.
-- ### ✨ Work Subtasks - Discovery & Implementation
-	- List work subtasks here.
-- ## Documentation
-	- Additional documentation details here.
+		- *[Clockify Report]*
+- ## Study
+  - ### Modules
+  	- 
+  - ## Documentation
+  	- Additional documentation details here.
