@@ -7,6 +7,7 @@ const REQUIRED_ENV_VARS = [
   "CLOCKIFY_API_KEY",
   "CLOCKIFY_MAIN_WORKSPACE_ID",
   "CLOCKIFY_PROJECT_STORIES_ID",
+  "WA_1_CONFIG_DIR",
 ] as const;
 
 // [number] is 'indexed access type operator' and converts the tuple into a union of its element types
