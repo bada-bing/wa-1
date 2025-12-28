@@ -107,11 +107,19 @@ export async function getDefaultBranch(project: string): Promise<string> {
   }
 }
 
-export async function checkoutLatestDefaultBranch(project: string): Promise<void> {
+export async function checkoutLatestDefaultBranch(
+  project: string
+): Promise<void> {
   try {
     const defaultBranch = await getDefaultBranch(project);
-    await executeCommand(`git switch ${defaultBranch}`, getProjectPath(project));
-    await executeCommand(`git pull origin ${defaultBranch}`, getProjectPath(project));
+    await executeCommand(
+      `git switch ${defaultBranch}`,
+      getProjectPath(project)
+    );
+    await executeCommand(
+      `git pull origin ${defaultBranch}`,
+      getProjectPath(project)
+    );
   } catch (error) {
     throw new Error(
       `[git] Failed to checkout and update default branch: ${
@@ -121,18 +129,44 @@ export async function checkoutLatestDefaultBranch(project: string): Promise<void
   }
 }
 
-export async function createFeatureBranch(
+async function branchExists(
+  project: string,
+  branchName: string
+): Promise<boolean> {
+  try {
+    // rev-parse is a plumbing command, used to manipulate hashes and refs
+    // --verify makes sure the ref exists
+    await executeCommand(
+      `git rev-parse --verify ${branchName}`,
+      getProjectPath(project)
+    );
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function createOrCheckoutBranch(
   project: string,
   branchName: string
 ): Promise<void> {
   try {
+    if (await branchExists(project, branchName)) {
+      console.log(`[git] Branch ${branchName} already exists. Checking out.`);
+      await executeCommand(
+        `git checkout ${branchName}`,
+        getProjectPath(project)
+      );
+      return;
+    }
+
     await executeCommand(
       `git checkout -b ${branchName}`,
       getProjectPath(project)
     );
   } catch (error) {
     throw new Error(
-      `[git] Failed to create feature branch: ${
+      `[git] Failed to create or checkout branch: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
@@ -143,8 +177,8 @@ export async function executeGitProcedure(
   issue: GitIssueData,
   config: TaskConfig
 ): Promise<void> {
-  assert(issue.project, "[GIT] issue project shouldn't be undefined")
-  
+  assert(issue.project, "[GIT] issue project shouldn't be undefined");
+
   if (!(await isValidRepository(issue.project))) {
     throw new Error(
       `[git] Invalid git repository at ${getProjectPath(issue.project)}`
@@ -165,10 +199,11 @@ export async function executeGitProcedure(
       `[git] Current branch: ${await getCurrentBranch(issue.project)}`
     );
     await checkoutLatestDefaultBranch(issue.project);
-    await createFeatureBranch(issue.project, issue.branchName);
+    await createOrCheckoutBranch(issue.project, issue.branchName);
     // TODO considering that most of these functions are catching the error already, I potentially don't need to catch them again.
     // or I can simply use this try catch to wrap the error message and the inner functions to determine if they need stderr or stdin
 
+    // TODO - updating changelog doesn't make sense always - e.g., if project is using changeset
     // Update changelog if it exists
     const changelogPath = path.join(
       getProjectPath(issue.project),
@@ -184,6 +219,8 @@ export async function executeGitProcedure(
     } else {
       console.log("[git] CHANGELOG.adoc not found, skipping changelog update");
     }
+
+    console.log("✔ Git Procedure complete");
   } catch (error) {
     throw new Error(
       `Git procedure failed: ${
