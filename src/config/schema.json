@@ -7,27 +7,16 @@
     "type": {
       "type": "string",
       "description": "The type of task to bootstrap",
-      "enum": ["work-task", "study-task"]
+      "enum": ["work-task", "study-task", "operations-task"]
     },
-    "client": {
-      "type": "string",
-      "description": "The client the work is done for"
-    },
-    "taskTypeMapping": {
+    "problemTypeMapping": {
       "type": "object",
-      "description": "Mapping of Jira issue types to internal task types",
+      "description": "Mapping of Jira issue types to internal problem types (bug, feature, task)",
       "additionalProperties": {
         "type": "string",
-        "enum": [
-          "bugfix",
-          "feature",
-          "improvement",
-          "task",
-          "chore",
-          "prototype"
-        ]
+        "enum": ["bug", "feature", "task"]
       },
-      "required": ["bug", "story", "improvement", "task"],
+      "required": ["bug", "story", "improvement", "task", "spike", "default"],
       "properties": {
         "bug": {
           "type": "string",
@@ -37,6 +26,10 @@
           "type": "string",
           "description": "Mapping for story type issues"
         },
+        "feature": {
+          "type": "string",
+          "description": "Mapping for feature type issues"
+        },
         "improvement": {
           "type": "string",
           "description": "Mapping for improvement type issues"
@@ -44,12 +37,23 @@
         "task": {
           "type": "string",
           "description": "Mapping for task type issues"
+        },
+        "spike": {
+          "type": "string",
+          "description": "Mapping for spike type issues"
+        },
+        "default": {
+          "type": "string",
+          "description": "Default mapping for unhandled issue types"
         }
       }
     },
-    "project": {
-      "type": "string",
-      "description": "The project to execute the task in, i.e., the repository name"
+    "clients": {
+      "type": "object",
+      "description": "Client specific configurations",
+      "additionalProperties": {
+        "$ref": "#/definitions/ClientConfig"
+      }
     },
     "vpn": {
       "type": "object",
@@ -179,5 +183,48 @@
         }
       }
     }
-  ]
+  ],
+  "definitions": {
+    "ClientConfig": {
+      "type": "object",
+      "required": ["projects", "projectMapping"],
+      "properties": {
+        "projects": {
+          "type": "array",
+          "description": "List of projects for this client",
+          "items": {
+            "type": "string"
+          }
+        },
+        "projectMapping": {
+          "type": "object",
+          "description": "Project mapping strategies for this client",
+          "properties": {
+            "basedOnParent": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "basedOnJiraProject": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ]
+              }
+            },
+            "basedOnLabels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
+

@@ -27,6 +27,7 @@ export interface TaskConfig {
     basedOnJiraProject: Record<string, string | string[]>;
     basedOnLabels: Record<string, string>;
   };
+  taskIdPrefix?: string[];
   vpn: {
     enabled: boolean;
     profile: string;
@@ -52,6 +53,12 @@ export interface TaskConfig {
   };
   studySources?: string[]; // e.g., ["exercism", "FM", "coursera", "other"]
   initiatives?: Record<string, string[]>; // e.g., { "10x": ["10x/domain-fe", "10x/domain-tools"] }
+}
+
+export enum TaskType {
+  Work = "work-task",
+  Study = "study-task",
+  Operations = "operations-task",
 }
 
 export interface TaskExecutor {
