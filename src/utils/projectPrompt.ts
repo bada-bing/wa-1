@@ -1,12 +1,12 @@
 import inquirer from "inquirer";
-import { TaskConfig } from "../types";
+// import { TaskConfig } from "../types"; // No longer needed directly
 
 // Prompt user to select or enter a project if missing
 export async function promptForProject(
   issueId: string,
-  config: TaskConfig
+  availableProjects: string[]
 ): Promise<string> {
-  const projectChoices = config.projects || [];
+  const projectChoices = availableProjects;
   
   if (projectChoices.length > 0) {
     const answer = await inquirer.prompt([
@@ -34,7 +34,7 @@ export async function promptForProject(
 export async function confirmProject(
   issueId: string,
   project: string,
-  config: TaskConfig
+  availableProjects: string[]
 ): Promise<string> {
   const answer = await inquirer.prompt([
     {
@@ -49,6 +49,6 @@ export async function confirmProject(
     return project;
   } else {
     // If user says no, prompt them to select a different project
-    return promptForProject(issueId, config);
+    return promptForProject(issueId, availableProjects);
   }
 }

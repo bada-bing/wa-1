@@ -15,19 +15,21 @@ export interface Applications {
   [key: string]: ApplicationConfig;
 }
 
-// TODO ❓ instead of hardcoding use zod or similar to dynamically set the type
-export interface TaskConfig {
-  type: string;
-  client?: string;
-  project?: string;
+export interface ClientConfig {
   projects: string[];
-  taskTypeMapping: Record<string, string>;
   projectMapping: {
     basedOnParent: Record<string, string>;
     basedOnJiraProject: Record<string, string | string[]>;
     basedOnLabels: Record<string, string>;
   };
+}
+
+// TODO ❓ instead of hardcoding use zod or similar to dynamically set the type
+export interface TaskConfig {
+  type: string;
   taskIdPrefix?: string[];
+  problemTypeMapping?: Record<string, string>;
+  clients?: Record<string, ClientConfig>;
   vpn: {
     enabled: boolean;
     profile: string;

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import "dotenv/config";
 
+import * as fs from "fs";
 import { Command } from "commander";
 import path from "path";
 import { ConfigLoader } from "./utils/configLoader";
@@ -10,6 +11,13 @@ import { TaskConfig } from "./types";
 import packageJson from "../package.json";
 import { env } from "./utils/envConfig";
 import { createStudyMetadata } from "./tasks/studyTask";
+import {
+  confirmTaskType,
+  guessTaskType,
+  promptForTaskType,
+} from "./utils/taskTypePrompt";
+import { promptForClient } from "./utils/clientPrompt";
+
 const program = new Command();
 
 program
@@ -86,19 +94,35 @@ program
       configLoader.validate();
 
       // Execute tasks based on type
-      switch (config.type) {
+      switch (taskType) {
         case "work-task":
-          const workIssue = await fetchAndAdaptIssue(issueId, config);
-          const workTask = new WorkTask(config, workIssue);
-          await workTask.bootstrap();
+          let activeClient: string;
+          if (config.clients && Object.keys(config.clients).length > 0) {
+            activeClient = await promptForClient(config);
+          } else {
+            throw new Error(
+              "No clients defined in the task-specific config for a work-task. A client is required."
+            );
+          }
+          const workIssue = await fetchAndAdaptIssue(
+            issueId,
+            config,
+            activeClient
+          );
+          const workTask = new WorkTask(config, workIssue, activeClient);
+          console.log(workTask);
+          // await workTask.bootstrap();
           break;
         case "study-task":
           const studyIssue = await createStudyMetadata(issueId, config);
           const studyTask = new StudyTask(config, studyIssue);
           await studyTask.bootstrap();
           break;
+        case "operations-task":
+          console.log("Operations task not implemented yet");
+          break;
         default:
-          console.error(`Unknown task type: ${config.type}`);
+          console.error(`Unknown task type: ${taskType}`);
           process.exit(1);
       }
     } catch (error) {

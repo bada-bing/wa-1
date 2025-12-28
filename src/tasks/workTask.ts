@@ -1,10 +1,25 @@
-import { BaseMetadata, CreateLinearIssueInput, TaskConfig, TaskExecutor } from "../types";
+import {
+  BaseMetadata,
+  ClientConfig,
+  CreateLinearIssueInput,
+  TaskConfig,
+  TaskExecutor,
+} from "../types";
 import { executeGitProcedure } from "../utils/git";
 import { executeLogseqProcedure } from "../integrations/logseq/LogseqService";
 import { createLinearIssue } from "../integrations/linear/LinearClient";
 import { createClockifyTask } from "../integrations/clockify/ClockifyClient";
-import { convertToStoryPoints, createIssueType, fetchIssue, RawJiraIssue } from "../integrations/jira/JiraClient";
-import { generateSlug, generateJiraLink, sanitizeSummary } from "../utils/prepareMetadata";
+import {
+  convertToStoryPoints,
+  createIssueType,
+  fetchIssue,
+  RawJiraIssue,
+} from "../integrations/jira/JiraClient";
+import {
+  generateSlug,
+  generateJiraLink,
+  sanitizeSummary,
+} from "../utils/prepareMetadata";
 import { confirmProject, promptForProject } from "../utils/projectPrompt";
 import { adaptTaskToLinear } from "../adapters/linear/BaseLinearAdapter";
 
@@ -21,8 +36,14 @@ export interface AdaptedIssue extends BaseMetadata {
 }
 
 export class WorkTask implements TaskExecutor {
-  constructor(private config: TaskConfig, private issue: AdaptedIssue) {
-    if (!config.project || !issue.project) {
+  private clientConfig: ClientConfig;
+
+  constructor(private config: TaskConfig, private issue: AdaptedIssue, private activeClient: string) {
+    if (!config.clients) {
+      throw new Error("Clients configuration not found for work task.");
+    }
+    this.clientConfig = config.clients[activeClient];
+    if (!this.clientConfig || !issue.project) {
       throw new Error("Project is required");
     }
   }
@@ -50,12 +71,14 @@ export class WorkTask implements TaskExecutor {
       );
 
       // Adapt work issue to Linear format, then execute
-      const linearInput = await adaptWorkIssueToLinear(this.issue, {
-        id: this.config.linear?.teamId,
-        key: this.config.linear?.teamKey,
-      },
-      this.config.client || ""
-    );
+      const linearInput = await adaptWorkIssueToLinear(
+        this.issue,
+        {
+          id: this.config.linear?.teamId,
+          key: this.config.linear?.teamKey,
+        },
+        this.activeClient
+      );
       await createLinearIssue(linearInput);
 
       await createClockifyTask(
@@ -87,7 +110,7 @@ export class WorkTask implements TaskExecutor {
 export async function adaptWorkIssueToLinear(
   issue: AdaptedIssue,
   teamConfig: { id?: string; key?: string },
-  projectName: string
+  activeClient: string
 ): Promise<CreateLinearIssueInput> {
   const links = {
     jira: issue.jiraLink,
@@ -108,7 +131,7 @@ export async function adaptWorkIssueToLinear(
     "✨",
     links,
     teamConfig,
-    projectName,
+    activeClient,
     additionalFields
   );
 }
@@ -136,18 +159,30 @@ function setEstimate(storyPoints: number): number {
 */
 export async function fetchAndAdaptIssue(
   issueKey: string,
-  config: TaskConfig
+  config: TaskConfig,
+  activeClient?: string
 ): Promise<AdaptedIssue> {
+  if (!activeClient) {
+    throw new Error("Active client is required for work tasks.");
+  }
+  if (!config.clients) {
+    throw new Error("Clients configuration not found for work task.");
+  }
+  const clientConfig = config.clients[activeClient];
+  if (!clientConfig) {
+    throw new Error(`Client configuration not found for active client: ${activeClient}`);
+  }
+
   const issue = await fetchIssue(issueKey);
 
-  let project = determineProject(issue, config);
+  let project = determineProject(issue, clientConfig);
 
   if (!project) {
     // If project couldn't be determined, prompt the user
-    project = await promptForProject(issue.id, config);
+    project = await promptForProject(issueKey, clientConfig.projects);
   } else {
     // If project was determined automatically, confirm with user
-    project = await confirmProject(issue.id, project, config);
+    project = await confirmProject(issueKey, project, clientConfig.projects);
   }
 
   const branchName = generateBranchName(issue, config);
@@ -172,41 +207,38 @@ export async function fetchAndAdaptIssue(
 // Use multiple strategies to determine the project: parent and jira project mapping, extract summary keywords
 export function determineProject(
   issue: RawJiraIssue,
-  config: TaskConfig
+  clientConfig: ClientConfig
 ): string | null {
   // Strategy 1: Check parent issue mapping
   const parent = issue.fields.parent?.key;
-  if (parent && config.projectMapping.basedOnParent[parent]) {
-    return config.projectMapping.basedOnParent[parent];
+  if (parent && clientConfig.projectMapping.basedOnParent[parent]) {
+    return clientConfig.projectMapping.basedOnParent[parent];
   }
 
   // Strategy 2: Check Jira project mapping
   const jiraProjectKey = issue.fields.project.key;
 
-  if (config.projectMapping.basedOnJiraProject[jiraProjectKey]) {
-    const mapped = config.projectMapping.basedOnJiraProject[jiraProjectKey];
+  if (clientConfig.projectMapping.basedOnJiraProject[jiraProjectKey]) {
+    const mapped = clientConfig.projectMapping.basedOnJiraProject[jiraProjectKey];
     // If it's a single string, return it
     if (typeof mapped === "string") {
       return mapped;
     }
-    // If it's an array with one item, return it
-    if (Array.isArray(mapped) && mapped.length === 1) {
+    // If it's an array, return the first item
+    if (Array.isArray(mapped) && mapped.length > 0) {
       return mapped[0];
     }
-    // If it's an array with multiple items, we can't automatically determine
-    // Return null to trigger user prompt
-    // TODO in future open prompt with elements from the array
   }
 
   // Strategy 3: Check labels mapping
   if (issue.fields.labels && issue.fields.labels.length > 0) {
     const issueLabels = issue.fields.labels.map((label) => label.toLowerCase());
     for (const [labelKey, project] of Object.entries(
-      config.projectMapping.basedOnLabels || {}
+      clientConfig.projectMapping.basedOnLabels || {}
     )) {
       if (issueLabels.includes(labelKey.toLowerCase())) {
         // Verify this project exists in the config
-        if (config.projects.includes(project)) {
+        if (clientConfig.projects.includes(project)) {
           return project;
         }
       }
@@ -233,15 +265,15 @@ export function determineProject(
   for (const [project, keywords] of Object.entries(summaryKeywords)) {
     if (keywords.some((keyword) => summary.includes(keyword))) {
       // Verify this project exists in the config
-      if (config.projects.includes(project)) {
+      if (clientConfig.projects.includes(project)) {
         return project;
       }
     }
   }
 
   // Strategy 5: Use default from parent mapping
-  if (config.projectMapping.basedOnParent["default"]) {
-    return config.projectMapping.basedOnParent["default"];
+  if (clientConfig.projectMapping.basedOnParent["default"]) {
+    return clientConfig.projectMapping.basedOnParent["default"];
   }
 
   // No project could be determined
@@ -253,7 +285,10 @@ export function determineProject(
   Create a branch name based on the issue key and a sanitized version of its summary.
   Use the issue key and summary for the branch name.
 */
-export function generateBranchName(issue: RawJiraIssue, config: TaskConfig): string {
+export function generateBranchName(
+  issue: RawJiraIssue,
+  config: TaskConfig
+): string {
   const issuetype = createIssueType(issue, config);
 
   const summary = sanitizeSummary(issue.fields.summary);

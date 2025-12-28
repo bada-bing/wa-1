@@ -7,7 +7,7 @@ export type RawJiraIssue = {
   key: string;
   fields: {
     summary: string;
-    description?: { type: string, version: number, content: any[]};
+    description?: { type: string; version: number; content: any[] };
     issuetype: {
       id: string;
       name: string;
@@ -133,13 +133,21 @@ export function convertToStoryPoints(customFieldValue: any): number {
 /*
   Map Jira issuetype names to one of the allowed types defined in the config.
 */
-export function createIssueType(issue: RawJiraIssue, config: TaskConfig): string {
+export function createIssueType(
+  issue: RawJiraIssue,
+  config: TaskConfig
+): string {
   const type = issue.fields?.issuetype?.name?.toLowerCase();
 
   if (!type) {
     throw new Error("Issue type not found");
   }
 
-  const mapping = config.taskTypeMapping;
-  return mapping[type] || mapping.default || "chore";
+  const mapping = config.problemTypeMapping;
+  if (!mapping) {
+    throw new Error(
+      "problemTypeMapping is not defined in the task configuration."
+    );
+  }
+  return mapping[type] || mapping.default || "task";
 }
