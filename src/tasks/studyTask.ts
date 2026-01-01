@@ -1,40 +1,42 @@
-import { CreateLinearIssueInput, StudyTaskMetadata, TaskConfig, TaskExecutor } from "../types";
+import {
+  StudyTaskMetadata,
+  TaskConfig,
+  TaskExecutor,
+} from "../types";
 import { generateSlug } from "../utils/prepareMetadata";
-import { promptForSource, confirmSource, promptForSummary, promptForInitiative, promptForObjective } from "../utils/sourcePrompt";
-import { createLinearIssue } from "../integrations/linear/LinearClient";
-import { adaptTaskToLinear } from "../adapters/linear/BaseLinearAdapter";
+import {
+  promptForSource,
+  confirmSource,
+  promptForSummary,
+  promptForInitiative,
+  promptForObjective,
+} from "../utils/sourcePrompt";
+import { executeLogseqProcedure } from "../integrations/logseq/LogseqService";
 
 export class StudyTask implements TaskExecutor {
-  constructor(private config: TaskConfig, private studyTaskMetadata: StudyTaskMetadata) {}
+  constructor(
+    private config: TaskConfig,
+    private studyTaskMetadata: StudyTaskMetadata
+  ) {}
 
   async bootstrap(): Promise<void> {
     try {
       // Skip git procedure for study tasks
 
       // Create LogSeq page
-      // await executeLogseqProcedure(
-      //   this.studyTaskMetadata.slug,
-      //   `logseq.${this.config.type}.template.md`,
-      //   {
-      //     key: this.studyTaskMetadata.key,
-      //     summary: this.studyTaskMetadata.summary,
-      //     slug: this.studyTaskMetadata.slug,
-      //     source: this.studyTaskMetadata.source || "manual",
-      //     initiative: this.studyTaskMetadata.initiative || "",
-      //     objective: this.studyTaskMetadata.objective || "",
-      //   },
-      //   this.config
-      // );
-
-      // TODO executeLinearProcedure (should wrap around 'adaptStudyIssueToLinear' and 'createLinearIssue')
-
-      // Adapt study task to Linear format, then execute
-      const linearInput = await adaptStudyIssueToLinear(this.studyTaskMetadata, {
-        id: this.config.linear?.teamId,
-        key: this.config.linear?.teamKey,
-      });
-
-      await createLinearIssue(linearInput);
+      await executeLogseqProcedure(
+        this.studyTaskMetadata.slug,
+        `logseq.${this.config.type}.template.md`,
+        {
+          key: this.studyTaskMetadata.key,
+          summary: this.studyTaskMetadata.summary,
+          slug: this.studyTaskMetadata.slug,
+          source: this.studyTaskMetadata.source || "manual",
+          initiative: this.studyTaskMetadata.initiative || "",
+          objective: this.studyTaskMetadata.objective || "",
+        },
+        this.config
+      );
 
       // Create Clockify task in study project
       // await createClockifyTask(
@@ -74,14 +76,14 @@ export async function createStudyMetadata(
   options?: Partial<StudyTaskMetadata>
 ): Promise<StudyTaskMetadata> {
   const sanitizedId = taskId.toLowerCase().replace(/[^a-z0-9\s-]+/g, "-");
-  
+
   // Determine source: use provided option, or auto-detect from taskId, or prompt user
   let source = options?.source;
-  
+
   if (!source) {
     // Try to auto-detect source from taskId
     const detectedSource = determineSourceFromTaskId(taskId, config);
-    
+
     if (detectedSource) {
       // If source was auto-detected, confirm with user
       source = await confirmSource(taskId, detectedSource, config);
@@ -93,18 +95,19 @@ export async function createStudyMetadata(
     // If source was provided in options, confirm with user
     source = await confirmSource(taskId, source, config);
   }
-  
-  const summary = options?.summary || (await promptForSummary(taskId)) || taskId;
+
+  const summary =
+    options?.summary || (await promptForSummary(taskId)) || taskId;
 
   // Determine initiative and objective
   let initiative = options?.initiative;
   let objective = options?.objective;
-  
+
   if (!initiative) {
     // Prompt for initiative (auto-selects if only one exists)
     initiative = await promptForInitiative(taskId, config);
   }
-  
+
   if (!objective) {
     // Prompt for objective (auto-selects if only one exists for the initiative)
     objective = await promptForObjective(taskId, initiative, config);
@@ -133,7 +136,7 @@ function determineSourceFromTaskId(
   }
 
   const taskIdUpper = taskId.toUpperCase();
-  
+
   // Check if taskId starts with any of the configured sources
   for (const source of config.studySources) {
     const sourceUpper = source.toUpperCase();
@@ -141,46 +144,12 @@ function determineSourceFromTaskId(
     if (
       taskIdUpper.startsWith(sourceUpper + "-") ||
       taskIdUpper.startsWith(sourceUpper + "_") ||
-      taskIdUpper.startsWith(sourceUpper) && /^\d/.test(taskId.substring(source.length))
+      (taskIdUpper.startsWith(sourceUpper) &&
+        /^\d/.test(taskId.substring(source.length)))
     ) {
       return source;
     }
   }
 
   return null;
-}
-
-// TODO move this method to StudyTask (and similarly for WorkTask)
-// TODO rename to prepareDataForLinear (or createLinearIssueInput)
-/*
-  Study-specific adapter: converts StudyTaskMetadata to LinearIssueInput
-*/
-export async function adaptStudyIssueToLinear(
-  studyTask: StudyTaskMetadata,
-  teamConfig: { id?: string; key?: string }
-): Promise<CreateLinearIssueInput> {
-  const links = {
-    logseq: `logseq://graph/kb_logseq?page=${studyTask.slug}`,
-    source: studyTask.source || "manual",
-    initiative: studyTask.initiative || "N/A",
-    objective: studyTask.objective || "N/A",
-  };
-
-  // TODO state, prirority and estimates are missing!
-  // TODO you should check if the linear issue with the same id already exists (e.g., FM-2) and suggest the next possible
-  const additionalFields: Partial<CreateLinearIssueInput> = {
-    priority: 0,
-    // Study tasks typically don't have estimates initially
-  };
-
-  return adaptTaskToLinear(
-    studyTask.key,
-    studyTask.summary,
-    studyTask.slug,
-    "📚",
-    links,
-    teamConfig,
-    studyTask.objective || "",
-    additionalFields
-  );
 }

@@ -1,32 +1,38 @@
 ---
-tags: wpr-story
-state: TODO
+tags: work-task
+status: TODO
+due_date:
 priority: 
 start_date:
 done_date:
 closed_date:
-project: {{ project }}
-issue_type: {{ issue_type }}
-size:
-branch_name: {{ branch_name }}
+client: {{ client }}
+problem_type: {{ issue_type }}
+estimated_effort: {{ estimated_effort }}
 title: {{ slug }}
 ---
-- #### {{ jira.issue }} ✨ {{ summary }}
+- # {{ jira.issue }} 🌑 {{ summary }}
+- ## Task Progress
+  background-color:: purple
+{{ action_items }}
 - ## Context
-	- **SCOPE**: #{{ project }}
-	- #### Related Stories
-		- *Related-Story-Placeholder*
+	- **Scope Keywords**: #{{ project }}
+	- **Branch Name**: {{ branch_name }}
+	- #### Related Tasks
+		- *Related-Tasks-Placeholder*
 	- #### Links
 		- [Jira]({{ jira.url }})
 		- *[GitLab]*
 		- *[Clockify]*
-		- *[Linear]*
-- ## Problem & Solution
-- ### Problem Description
-	- Describe the problem here.
-- ### (Solution) Requirements
-	- Describe the solution requirements here.
-- ### ✨ Work Subtasks - Discovery & Implementation
-	- List work subtasks here.
+- ## Problem
+  - ### Problem Description
+      - *Describe the problem*
+  - ### Objectives/Requirements/Use-Cases [Optional]
+      - 1. *Describe the solution objectives, requirements and/or use-cases, *
+- ## Solution
+  - ### Acceptance Criteria
+    - C1. *Describe the criteria for the acceptance of the solution*
+  - ### Action Plan
+    - LATER *List implementation subtasks here*
 - ## Documentation
-	- Additional documentation details here.
+	- *Add documentation details here*

@@ -110,8 +110,7 @@ program
             activeClient
           );
           const workTask = new WorkTask(config, workIssue, activeClient);
-          console.log(workTask);
-          // await workTask.bootstrap();
+          await workTask.bootstrap();
           break;
         case "study-task":
           const studyIssue = await createStudyMetadata(issueId, config);

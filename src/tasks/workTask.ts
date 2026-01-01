@@ -1,14 +1,6 @@
-import {
-  BaseMetadata,
-  ClientConfig,
-  CreateLinearIssueInput,
-  TaskConfig,
-  TaskExecutor,
-} from "../types";
+import { BaseMetadata, ClientConfig, TaskConfig, TaskExecutor } from "../types";
 import { executeGitProcedure } from "../utils/git";
 import { executeLogseqProcedure } from "../integrations/logseq/LogseqService";
-import { createLinearIssue } from "../integrations/linear/LinearClient";
-import { createClockifyTask } from "../integrations/clockify/ClockifyClient";
 import {
   convertToStoryPoints,
   createIssueType,
@@ -21,7 +13,8 @@ import {
   sanitizeSummary,
 } from "../utils/prepareMetadata";
 import { confirmProject, promptForProject } from "../utils/projectPrompt";
-import { adaptTaskToLinear } from "../adapters/linear/BaseLinearAdapter";
+import { promises as fs } from "fs";
+import * as path from "path";
 
 // Work task specific issue (extends base with Jira-related fields)
 export interface AdaptedIssue extends BaseMetadata {
@@ -38,7 +31,11 @@ export interface AdaptedIssue extends BaseMetadata {
 export class WorkTask implements TaskExecutor {
   private clientConfig: ClientConfig;
 
-  constructor(private config: TaskConfig, private issue: AdaptedIssue, private activeClient: string) {
+  constructor(
+    private config: TaskConfig,
+    private issue: AdaptedIssue,
+    private activeClient: string
+  ) {
     if (!config.clients) {
       throw new Error("Clients configuration not found for work task.");
     }
@@ -51,6 +48,19 @@ export class WorkTask implements TaskExecutor {
   async bootstrap(): Promise<void> {
     try {
       await executeGitProcedure(this.issue, this.config);
+
+      const checklistTemplate = await fs.readFile(
+        path.resolve(
+          process.cwd(),
+          "src/templates/work-task-checklist.template.md"
+        ),
+        "utf-8"
+      );
+
+      const indentedChecklist = checklistTemplate
+        .split("\n")
+        .map((line) => `  ${line}`)
+        .join("\n");
 
       // Prepare template data for LogSeq
       await executeLogseqProcedure(
@@ -66,24 +76,11 @@ export class WorkTask implements TaskExecutor {
           summary: this.issue.summary,
           slug: this.issue.slug,
           issue_type: this.issue.issueType,
+          action_items: indentedChecklist,
+          estimated_effort: setEstimate(this.issue.storyPoints),
+          client: this.activeClient.toUpperCase(),
         },
         this.config
-      );
-
-      // Adapt work issue to Linear format, then execute
-      const linearInput = await adaptWorkIssueToLinear(
-        this.issue,
-        {
-          id: this.config.linear?.teamId,
-          key: this.config.linear?.teamKey,
-        },
-        this.activeClient
-      );
-      await createLinearIssue(linearInput);
-
-      await createClockifyTask(
-        { key: this.issue.key },
-        this.config.clockify?.projectId
       );
 
       await this.openApplications(); // TODO I could do this after I bootstrap the task
@@ -102,38 +99,6 @@ export class WorkTask implements TaskExecutor {
     // TODO Implement application launching logic
     console.log("Opening required applications...");
   }
-}
-
-/*
-  Work-specific adapter: converts AdaptedIssue (from Jira) to LinearIssueInput
-*/
-export async function adaptWorkIssueToLinear(
-  issue: AdaptedIssue,
-  teamConfig: { id?: string; key?: string },
-  activeClient: string
-): Promise<CreateLinearIssueInput> {
-  const links = {
-    jira: issue.jiraLink,
-    gitlab: "#", // TODO: issue.gitlabLink,
-    logseq: `logseq://graph/kb_logseq?page=${issue.slug}`,
-    clockify: "#", // TODO: issue.clockifyLink,
-  };
-
-  const additionalFields: Partial<CreateLinearIssueInput> = {};
-  if (issue.storyPoints) {
-    additionalFields.estimate = setEstimate(issue.storyPoints);
-  }
-
-  return adaptTaskToLinear(
-    issue.key,
-    issue.summary,
-    issue.slug,
-    "✨",
-    links,
-    teamConfig,
-    activeClient,
-    additionalFields
-  );
 }
 
 function setEstimate(storyPoints: number): number {
@@ -170,7 +135,9 @@ export async function fetchAndAdaptIssue(
   }
   const clientConfig = config.clients[activeClient];
   if (!clientConfig) {
-    throw new Error(`Client configuration not found for active client: ${activeClient}`);
+    throw new Error(
+      `Client configuration not found for active client: ${activeClient}`
+    );
   }
 
   const issue = await fetchIssue(issueKey);
@@ -219,13 +186,17 @@ export function determineProject(
   const jiraProjectKey = issue.fields.project.key;
 
   if (clientConfig.projectMapping.basedOnJiraProject[jiraProjectKey]) {
-    const mapped = clientConfig.projectMapping.basedOnJiraProject[jiraProjectKey];
+    const mapped =
+      clientConfig.projectMapping.basedOnJiraProject[jiraProjectKey];
     // If it's a single string, return it
     if (typeof mapped === "string") {
       return mapped;
     }
-    // If it's an array, return the first item
-    if (Array.isArray(mapped) && mapped.length > 0) {
+    // If it's an array, return null if there's more than one option (requires user prompt), otherwise return the first item
+    if (Array.isArray(mapped)) {
+      if (mapped.length > 1) {
+        return null;
+      }
       return mapped[0];
     }
   }
@@ -247,20 +218,7 @@ export function determineProject(
 
   // Strategy 4: Check summary for project keywords
   const summary = issue.fields.summary.toLowerCase();
-  const summaryKeywords: Record<string, string[]> = {
-    "cart-ui-next": [
-      "cart_ui_next",
-      "cart-ui-next",
-      "cart ui next",
-      "shopping_cart",
-    ],
-    "shopping-profile-ui": [
-      "shopping_profile",
-      "shopping-profile",
-      "profile ui",
-    ],
-    "form-generator": ["form_generator", "form-generator", "form generator"],
-  };
+  const summaryKeywords = clientConfig.projectMapping.basedOnSummaryKeywords || {};
 
   for (const [project, keywords] of Object.entries(summaryKeywords)) {
     if (keywords.some((keyword) => summary.includes(keyword))) {

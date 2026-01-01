@@ -10,21 +10,14 @@ import { validStudyTaskConfig } from '../fixtures/configs';
  * It verifies that all study-specific integrations are called in the correct order.
  *
  * Flow:
- * 1. Create Linear issue with study metadata (source, initiative, objective)
- * 2. Create LogSeq study documentation page
- * 3. Create Clockify time tracking for study session
- * 4. Export to RemNote for note-taking
+ * 1. Create LogSeq study documentation page
+ * 2. Create Clockify time tracking for study session
+ * 3. Export to RemNote for note-taking
  *
  * Note: Study tasks don't involve Git (no branch creation) since they're personal learning tasks.
  */
 
-// Mock all external dependencies
-vi.mock('../../src/integrations/linear/LinearClient', () => ({
-  createLinearIssue: vi.fn().mockResolvedValue({ id: 'linear-123', identifier: 'ENG-123' }),
-  getLinearTeam: vi.fn().mockResolvedValue('team-123'),
-  getDefaultAssigneeAndState: vi.fn().mockResolvedValue({ assigneeId: 'user-123', stateId: 'state-123' }),
-  getLinearProject: vi.fn().mockResolvedValue({ id: 'project-123', name: 'Test Project' })
-}));
+
 
 vi.mock('../../src/integrations/logseq/LogseqService', () => ({
   executeLogseqProcedure: vi.fn().mockResolvedValue(undefined)
@@ -43,12 +36,17 @@ describe('Study Task Bootstrap Integration', () => {
     vi.clearAllMocks();
   });
 
-  it('executes complete study task bootstrap: Study metadata → Linear → LogSeq → Clockify → RemNote', async () => {
+  it('executes complete study task bootstrap: Study metadata → LogSeq → Clockify → RemNote', async () => {
     // Import mocked modules after they've been mocked
-    const { createLinearIssue } = await import('../../src/integrations/linear/LinearClient');
-    const { executeLogseqProcedure } = await import('../../src/integrations/logseq/LogseqService');
-    const { createClockifyTask } = await import('../../src/integrations/clockify/ClockifyClient');
-    const { executeRemNoteProcedure } = await import('../../src/integrations/remnote/RemNoteService');
+    const { executeLogseqProcedure } = await import(
+      '../../src/integrations/logseq/LogseqService'
+    );
+    const { createClockifyTask } = await import(
+      '../../src/integrations/clockify/ClockifyClient'
+    );
+    const { executeRemNoteProcedure } = await import(
+      '../../src/integrations/remnote/RemNoteService'
+    );
 
     // Arrange - Create study task with sample metadata
     const task = new StudyTask(validStudyTaskConfig, sampleStudyTaskMetadata);
@@ -71,21 +69,11 @@ describe('Study Task Bootstrap Integration', () => {
     //   validStudyTaskConfig
     // );
 
-    // 2. Linear: Creates issue with study-specific fields
-    expect(createLinearIssue).toHaveBeenCalledTimes(1);
-    expect(createLinearIssue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: expect.stringContaining('TypeScript Fundamentals Course'),
-        description: expect.any(String),
-        teamId: expect.any(String)
-      })
-    );
-
-    // 3. Clockify: Creates time tracking for study session
+    // 2. Clockify: Creates time tracking for study session
     // TODO: Currently commented out in studyTask.ts lines 40-43
     // expect(createClockifyTask).toHaveBeenCalledTimes(1);
 
-    // 4. RemNote: Exports markdown for note-taking
+    // 3. RemNote: Exports markdown for note-taking
     // TODO: Currently commented out in studyTask.ts line 46
     // expect(executeRemNoteProcedure).toHaveBeenCalledTimes(1);
 
@@ -116,7 +104,6 @@ describe('Study Task Bootstrap Integration', () => {
 
     // Study tasks characteristics:
     // ✅ Has study-specific metadata (source, initiative, objective)
-    // ✅ Creates Linear issue with 📚 emoji (not ✨)
     // ✅ Exports to RemNote (work tasks don't)
     // ❌ No Git operations (no branch creation)
     // ❌ No Jira integration (not from Jira issues)
@@ -131,16 +118,20 @@ describe('Study Task Bootstrap Integration', () => {
   });
 
   it('propagates errors when study task bootstrap fails', async () => {
-    const { createLinearIssue } = await import('../../src/integrations/linear/LinearClient');
+    const { executeLogseqProcedure } = await import(
+      '../../src/integrations/logseq/LogseqService'
+    );
 
-    // Arrange - Make Linear procedure fail
-    vi.mocked(createLinearIssue).mockRejectedValue(
-      new Error('Linear team not found')
+    // Arrange - Make Logseq procedure fail
+    vi.mocked(executeLogseqProcedure).mockRejectedValue(
+      new Error('Logseq graph not found')
     );
 
     const task = new StudyTask(validStudyTaskConfig, sampleStudyTaskMetadata);
 
     // Act & Assert - Should throw with context
-    await expect(task.bootstrap()).rejects.toThrow('Failed to execute study task');
+    await expect(task.bootstrap()).rejects.toThrow(
+      'Failed to execute study task'
+    );
   });
 });

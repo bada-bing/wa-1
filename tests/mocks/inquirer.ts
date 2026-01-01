@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 /**
  * Mock Inquirer Prompts
@@ -10,16 +10,16 @@ import { vi } from 'vitest';
  * import { mockInquirerPrompts } from '../mocks/inquirer';
  *
  * mockInquirerPrompts({
- *   project: 'cart-ui-next',
+ *   project: 'work-project-1',
  *   source: 'Frontend Masters'
  * });
  * ```
  */
 export const mockInquirerPrompts = (answers: Record<string, any>) => {
-  vi.mock('inquirer', () => ({
+  vi.mock("inquirer", () => ({
     default: {
-      prompt: vi.fn().mockResolvedValue(answers)
-    }
+      prompt: vi.fn().mockResolvedValue(answers),
+    },
   }));
 };
 
@@ -36,6 +36,6 @@ export const createMockInquirer = () => {
     },
     setAnswers: (answers: Record<string, any>) => {
       promptMock.mockResolvedValueOnce(answers);
-    }
+    },
   };
 };

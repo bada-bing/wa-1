@@ -1,4 +1,4 @@
-export { CreateLinearIssueInput } from "./linear";
+
 
 export interface VPNConfig {
   enabled: boolean;
@@ -21,6 +21,7 @@ export interface ClientConfig {
     basedOnParent: Record<string, string>;
     basedOnJiraProject: Record<string, string | string[]>;
     basedOnLabels: Record<string, string>;
+    basedOnSummaryKeywords?: Record<string, string[]>;
   };
 }
 
@@ -43,10 +44,7 @@ export interface TaskConfig {
   logseq: {
     pagesPath: string;
   };
-  linear?: {
-    teamId?: string;
-    teamKey?: string;
-  };
+
   clockify?: {
     projectId: string;
   };
