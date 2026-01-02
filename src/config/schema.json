@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wa-1/schemas/config.json",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "The type of task to bootstrap",
+      "enum": ["work-task", "study-task", "operations-task"]
+    },
+    "problemTypeMapping": {
+      "type": "object",
+      "description": "Mapping of Jira issue types to internal problem types (bug, feature, task)",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["bug", "feature", "task"]
+      },
+      "required": ["bug", "story", "improvement", "task", "spike", "default"],
+      "properties": {
+        "bug": {
+          "type": "string",
+          "description": "Mapping for bug type issues"
+        },
+        "story": {
+          "type": "string",
+          "description": "Mapping for story type issues"
+        },
+        "feature": {
+          "type": "string",
+          "description": "Mapping for feature type issues"
+        },
+        "improvement": {
+          "type": "string",
+          "description": "Mapping for improvement type issues"
+        },
+        "task": {
+          "type": "string",
+          "description": "Mapping for task type issues"
+        },
+        "spike": {
+          "type": "string",
+          "description": "Mapping for spike type issues"
+        },
+        "default": {
+          "type": "string",
+          "description": "Default mapping for unhandled issue types"
+        }
+      }
+    },
+    "clients": {
+      "type": "object",
+      "description": "Client specific configurations",
+      "additionalProperties": {
+        "$ref": "#/definitions/ClientConfig"
+      }
+    },
+    "vpn": {
+      "type": "object",
+      "description": "VPN configuration settings",
+      "required": ["enabled", "profile"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether VPN should be enabled"
+        },
+        "profile": {
+          "type": "string",
+          "description": "The VPN profile name to use"
+        }
+      }
+    },
+    "applications": {
+      "type": "object",
+      "description": "Application configurations",
+      "required": ["browser"],
+      "properties": {
+        "browser": {
+          "type": "object",
+          "required": ["path", "profile"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path to the browser application"
+            },
+            "profile": {
+              "type": "string",
+              "description": "Profile name to use for the browser"
+            }
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "profile"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the application"
+          },
+          "profile": {
+            "type": "string",
+            "description": "Profile name to use for the application"
+          }
+        }
+      }
+    },
+    "linear": {
+      "type": "object",
+      "description": "Linear configuration settings",
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "description": "The Linear team ID to create issues in"
+        },
+        "teamKey": {
+          "type": "string",
+          "description": "The Linear team key to create issues in (alternative to teamId)"
+        }
+      },
+      "anyOf": [
+        { "required": ["teamId"] },
+        { "required": ["teamKey"] }
+      ]
+    },
+    "clockify": {
+      "type": "object",
+      "description": "Clockify configuration settings",
+      "required": ["projectId"],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "description": "The Clockify project ID to create tasks in"
+        }
+      }
+    },
+    "remnote": {
+      "type": "object",
+      "description": "RemNote configuration settings",
+      "required": ["exportPath"],
+      "properties": {
+        "exportPath": {
+          "type": "string",
+          "description": "Path where markdown files will be exported for RemNote import"
+        }
+      }
+    },
+    "studySources": {
+      "type": "array",
+      "description": "List of available study sources (e.g., exercism, FM, coursera)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "initiatives": {
+      "type": "object",
+      "description": "Mapping of initiatives to their objectives (e.g., '10x': ['10x/domain-fe', '10x/domain-tools'])",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Conditional validation: studySources required for study-task, not allowed for work-task",
+      "if": {
+        "properties": {
+          "type": { "const": "study-task" }
+        }
+      },
+      "then": {
+        "required": ["studySources"]
+      },
+      "else": {
+        "not": {
+          "required": ["studySources"]
+        },
+        "properties": {
+          "studySources": false
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "ClientConfig": {
+      "type": "object",
+      "required": ["projects", "projectMapping"],
+      "properties": {
+        "projects": {
+          "type": "array",
+          "description": "List of projects for this client",
+          "items": {
+            "type": "string"
+          }
+        },
+        "projectMapping": {
+          "type": "object",
+          "description": "Project mapping strategies for this client",
+          "properties": {
+            "basedOnParent": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "basedOnJiraProject": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ]
+              }
+            },
+            "basedOnLabels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
